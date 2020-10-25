@@ -1,0 +1,13 @@
+#page-container {
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#root {
+    height: 100%;
+}
+
+.App {
+    height: 100%;
+}
