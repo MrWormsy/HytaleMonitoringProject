@@ -14,9 +14,15 @@ const idColorMapping = {
 // Size of a "block" in px
 const blockSize = 10;
 
-const mapSize = [100, 200];
+// chunk size in blocks
+const chunkSize = 16;
+
+const mapSize = [5, 5];
 
 let colorToData = {};
+
+let zoomIdentity = undefined;
+
 
 let virtualCanvas = undefined;
 let virtualContext = undefined;
@@ -68,8 +74,14 @@ class Map extends Component {
         virtualContext = virtualCanvasDOM.getContext('2d');
         virtualContext.scale(scale, scale);
 
+        // Create a new zoomIdentity
+        zoomIdentity = d3.zoomIdentity;
+        zoomIdentity.x = (Math.floor(mapSize[0] / 2) * chunkSize * blockSize);
+        zoomIdentity.y = (Math.floor(mapSize[1] / 2) * chunkSize * blockSize);
+        zoomIdentity.k = 1;
+
         // Use this data
-        this.drawMap(d3.zoomIdentity);
+        this.drawMap(zoomIdentity);
 
         // Zoom for the canvas
         let canvasD3 = d3.select('#canvas');
@@ -81,14 +93,23 @@ class Map extends Component {
         canvasD3.call(zoomMap)
             .on("dblclick.zoom", this.resetMap);
 
-        canvasD3.on('mousemove', ({clientX, clientY}) => {this.mouseMoveHandler(clientX, clientY)});
+        d3.select("#svg").call(zoomMap)
+            .on("dblclick.zoom", this.resetMap);
+
+        canvasD3.on('mousemove', ({clientX, clientY}) => {
+            this.mouseMoveHandler(clientX, clientY)
+        });
     }
 
     // Reset the map
     resetMap() {
         d3.select('#canvas').transition()
             .duration(750)
-            .call(zoomMap.transform, d3.zoomIdentity);
+            .call(zoomMap.transform, zoomIdentity);
+
+        d3.select('#svg').transition()
+            .duration(750)
+            .call(zoomMap.transform, zoomIdentity);
     }
 
     mouseMoveHandler = (mouseX, mouseY) => {
@@ -126,29 +147,51 @@ class Map extends Component {
         virtualContext.scale(transform.k, transform.k);
         virtualContext.beginPath();
 
-        // First we loop through the first layer (columns)
         let i = 0;
-        data.forEach((col, indexCol) => {
 
-            // Then we loop through the second layer (rows)
-            col.forEach((row, indexRow) => {
+        // We loop through the available chunks
+        data.forEach((chunk) => {
 
-                const color = Map.getColor(i);
-                colorToData[color] = row;
+            // We loop through the chunk data which will be the columns
+            chunk.data.forEach((chunkDataCol, indexBlockY) => {
 
-                virtualContext.strokeStyle = 'rgba(0,0,0,0)';
-                virtualContext.fillStyle = color;
-                virtualContext.lineWidth = 0;
-                virtualContext.fillRect(indexRow * blockSize, indexCol * blockSize, blockSize, blockSize);
+                // And then we loop through the rows which will be the blocks
+                chunkDataCol.forEach((block, indexBlockX) => {
 
-                context.strokeStyle = 'rgba(0,0,0,0)';
-                context.fillStyle = row;
-                context.lineWidth = 0;
-                context.fillRect(indexRow * blockSize, indexCol * blockSize, blockSize, blockSize);
+                    // Get the color unique for the mapping data
+                    const color = Map.getColor(i);
+                    colorToData[color] = block;
 
-                i++;
+                    // Paint the virtual canvas
+                    virtualContext.strokeStyle = 'rgba(0,0,0,0)';
+                    virtualContext.fillStyle = color;
+                    virtualContext.lineWidth = 0;
+                    virtualContext.fillRect(((chunk.x * chunkSize) + indexBlockX) * blockSize, ((chunk.y * chunkSize) + indexBlockY) * blockSize, blockSize, blockSize);
+
+                    // Paint the real canvas
+                    context.strokeStyle = 'rgba(0,0,0,0)';
+                    context.fillStyle = block;
+                    context.lineWidth = 0;
+                    context.fillRect(((chunk.x * chunkSize) + indexBlockX) * blockSize, ((chunk.y * chunkSize) + indexBlockY) * blockSize, blockSize, blockSize);
+
+                    i++;
+                });
             });
+
+            // We add a box to each chunks
+            d3.select('#gMain').append('rect')
+                .attr('x', (chunk.x * chunkSize) * blockSize)
+                .attr('y', (chunk.y * chunkSize) * blockSize)
+                .attr('width', chunkSize * blockSize)
+                .attr('height', chunkSize * blockSize)
+                .attr('fill', "transparent")
+                .attr('stroke-width', "3")
+                .attr('stroke', "red")
+
         });
+
+        d3.select('#gMain')
+            .attr("transform", `translate(${transform.x} ${transform.y}) scale(${transform.k} ${transform.k})`);
 
         context.fill();
         context.restore();
@@ -159,24 +202,51 @@ class Map extends Component {
 
     render() {
         return (
-            <canvas id="canvas" style={{border: "2px solid gold", width: '100%', height: '100%'}}>
+            <>
+                <canvas id="canvas" style={{border: "2px solid gold", width: '100%', height: '100%', position: 'absolute'}}>
 
-            </canvas>
+                </canvas>
+                <svg id="svg" style={{border: "2px solid gold", width: '100%', height: '100%', position: 'absolute'}}>
+
+                    <g id="gMain">
+
+                    </g>
+
+                </svg>
+            </>
         );
     };
 }
 
 Map.getRandomInteger = (min = 0, max) => {
-    return Math.floor(Math.random() * (max - min) ) + min;
+    return Math.floor(Math.random() * (max - min)) + min;
 };
 
 // Generate a terrain from a size
 Map.generateData = (mapSize) => {
-    return d3.range(mapSize[0]).map((i) => {
-        return d3.range(mapSize[1]).map((j) => {
-            return idColorMapping[Map.getRandomInteger(0, Object.keys(idColorMapping).length)];
+
+    let data = [];
+
+    d3.range(mapSize[0]).map((_, i) => {
+        d3.range(mapSize[1]).map((_, j) => {
+            data.push(Map.generateChunk((-Math.floor(mapSize[0] / 2)) + i, (-Math.floor(mapSize[1] / 2)) + j));
         });
-    })
+    });
+
+    return data;
+};
+
+// Create a chunk randomly (chunkSize x chunkSize)
+Map.generateChunk = (chunkX, chunkY) => {
+    return {
+        x: chunkX,
+        y: chunkY,
+        data: d3.range(chunkSize).map((i) => {
+            return d3.range(chunkSize).map((j) => {
+                return idColorMapping[Map.getRandomInteger(0, Object.keys(idColorMapping).length)];
+            })
+        })
+    }
 };
 
 /*
@@ -193,7 +263,10 @@ Map.getColor = (index) => {
         .toString();
 };
 
+
 // Get random data
 const data = Map.generateData(mapSize);
+
+console.log(data);
 
 export default Map;
