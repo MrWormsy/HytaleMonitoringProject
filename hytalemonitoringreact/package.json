@@ -1,6 +1,7 @@
 {
   "name": "hytalemonitoringreact",
   "version": "0.1.0",
+  "proxy": "http://localhost:3000",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.11.5",
@@ -37,6 +38,7 @@
     ]
   },
   "devDependencies": {
+    "axios": "^0.21.0",
     "react-d3": "^0.4.0",
     "react-responsive": "^8.1.0",
     "react-router-dom": "^5.2.0"

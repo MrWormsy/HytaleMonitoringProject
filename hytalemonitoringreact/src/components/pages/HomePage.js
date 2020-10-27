@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import MapCanvas from "../MapCanvas";
+import ChunkGenerator from "../ChunkGenerator";
 
 class HomePage extends Component {
 
@@ -9,7 +10,9 @@ class HomePage extends Component {
 
     render() {
         return (
+            <>
             <MapCanvas/>
+            </>
         );
     }
 }

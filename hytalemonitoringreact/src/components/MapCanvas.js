@@ -12,16 +12,19 @@ const idColorMapping = {
 };
 
 // Size of a "block" in px
-const blockSize = 10;
+const blockSize = 20;
 
 // chunk size in blocks
 const chunkSize = 16;
 
-const mapSize = [5, 5];
+const mapSize = [50, 50];
 
 let colorToData = {};
 
 let zoomIdentity = undefined;
+
+// By default the chunk at the middle is the chunk 0 0
+let defaultMidScreenChunk = {x: 0, y: 0};
 
 
 let virtualCanvas = undefined;
@@ -74,10 +77,12 @@ class Map extends Component {
         virtualContext = virtualCanvasDOM.getContext('2d');
         virtualContext.scale(scale, scale);
 
-        // Create a new zoomIdentity
+        // Create a new zoomIdentity (and place the chunk at the middle of the screen)
         zoomIdentity = d3.zoomIdentity;
-        zoomIdentity.x = (Math.floor(mapSize[0] / 2) * chunkSize * blockSize);
-        zoomIdentity.y = (Math.floor(mapSize[1] / 2) * chunkSize * blockSize);
+        // zoomIdentity.x = (Math.floor(mapSize[0] / 2) * chunkSize * blockSize);
+        zoomIdentity.x = width/2 - (chunkSize * blockSize)/2;
+        // zoomIdentity.y = (Math.floor(mapSize[1] / 2) * chunkSize * blockSize);
+        zoomIdentity.y = height/2 - (chunkSize * blockSize)/2;
         zoomIdentity.k = 1;
 
         // Use this data
@@ -87,7 +92,7 @@ class Map extends Component {
         let canvasD3 = d3.select('#canvas');
 
         zoomMap = d3.zoom()
-            .scaleExtent([0.1, 10])
+            .scaleExtent([0.3, 4])
             .on("zoom", ({transform}) => this.drawMap(transform));
 
         canvasD3.call(zoomMap)
@@ -134,6 +139,13 @@ class Map extends Component {
 
         lastTransform = transform;
 
+        // We now need to know which chunk is in the middle of the screen (after translating)
+        defaultMidScreenChunk.x = Math.floor((zoomIdentity.x - transform.x + (chunkSize * blockSize * transform.k)/2) / (chunkSize * blockSize * transform.k));
+        defaultMidScreenChunk.y = Math.floor((zoomIdentity.y - transform.y + (chunkSize * blockSize * transform.k)/2) / (chunkSize * blockSize * transform.k));
+
+        // We need to clean up the gMain element first
+        d3.select('#gMain').selectAll('*').remove();
+
         context.save();
         context.clearRect(0, 0, width, height);
         context.translate(transform.x, transform.y);
@@ -147,10 +159,29 @@ class Map extends Component {
         virtualContext.scale(transform.k, transform.k);
         virtualContext.beginPath();
 
+        // We get the size of the screen and we want to know how many chunks we can have in the screen
+        let nbChunksX = Math.ceil((width / (chunkSize * blockSize * transform.k)));
+        let nbChunksY = Math.ceil((height / (chunkSize * blockSize * transform.k)));
+
+        // Now that we have the chunk at the middle and the screen we can select the range of chunks we want to show
+        let rangeOfChunksX = [defaultMidScreenChunk.x - Math.ceil(nbChunksX / 2), defaultMidScreenChunk.x + Math.ceil(nbChunksX / 2) + 1];
+        let rangeOfChunksY = [defaultMidScreenChunk.y - Math.ceil(nbChunksY / 2), defaultMidScreenChunk.y + Math.ceil(nbChunksY / 2) + 1];
+
+        // Now we can show the chunks we want to show
+        let chunksToShow = [];
+        for (let i = rangeOfChunksX[0]; i <= rangeOfChunksX[1]; i++) {
+            for (let j = rangeOfChunksY[0]; j <= rangeOfChunksY[1]; j++) {
+                chunksToShow.push(data[`x:${i}, y:${j}`]);
+            }
+        }
+
+        // We remove all the undefined (if the world is smaller than the nb of chunks to see)
+        chunksToShow = chunksToShow.filter(d => d);
+
         let i = 0;
 
         // We loop through the available chunks
-        data.forEach((chunk) => {
+        chunksToShow.forEach((chunk) => {
 
             // We loop through the chunk data which will be the columns
             chunk.data.forEach((chunkDataCol, indexBlockY) => {
@@ -179,14 +210,25 @@ class Map extends Component {
             });
 
             // We add a box to each chunks
-            d3.select('#gMain').append('rect')
-                .attr('x', (chunk.x * chunkSize) * blockSize)
-                .attr('y', (chunk.y * chunkSize) * blockSize)
+            let rect = d3.select('#gMain').append('rect')
+                .attr('x', (chunk.x * chunkSize * blockSize))
+                .attr('y', (chunk.y * chunkSize * blockSize))
                 .attr('width', chunkSize * blockSize)
                 .attr('height', chunkSize * blockSize)
-                .attr('fill', "transparent")
-                .attr('stroke-width', "3")
+                // The chunk at the middle must be green
+                .attr('fill', (chunk.x === defaultMidScreenChunk.x && chunk.y === defaultMidScreenChunk.y) ? "rgba(0,255,0,0.3)" : "transparent")
+                .attr('stroke-width', "0")
                 .attr('stroke', "red")
+                .on('mouseover', function () {
+                    d3.select(this).attr('fill', "rgba(255,0,0,0.3)")
+                })
+                .on('mouseout', function () {
+                    d3.select(this).attr('fill', (chunk.x === defaultMidScreenChunk.x && chunk.y === defaultMidScreenChunk.y) ? "rgba(0,255,0,0.3)" : "transparent")
+                });
+
+            // Append a title (this will be removed)
+            rect.append('title')
+                .text(`x: ${chunk.x}, y: ${chunk.y}`)
 
         });
 
@@ -225,11 +267,11 @@ Map.getRandomInteger = (min = 0, max) => {
 // Generate a terrain from a size
 Map.generateData = (mapSize) => {
 
-    let data = [];
+    let data = {};
 
     d3.range(mapSize[0]).map((_, i) => {
         d3.range(mapSize[1]).map((_, j) => {
-            data.push(Map.generateChunk((-Math.floor(mapSize[0] / 2)) + i, (-Math.floor(mapSize[1] / 2)) + j));
+            data[`x:${i - Math.floor(mapSize[0] / 2)}, y:${j - Math.floor(mapSize[1] / 2)}`] = Map.generateChunk((-Math.floor(mapSize[0] / 2)) + i, (-Math.floor(mapSize[1] / 2)) + j);
         });
     });
 
