@@ -23,6 +23,16 @@ let colorToData = {};
 
 let zoomIdentity = undefined;
 
+// Chunk that could not be loaded
+let notLoadedChunks = [];
+
+// Chunk not to render with minimum x, maximum x, minimum y, maximum y
+const MIN_X_INDEX = 0;
+const MAX_X_INDEX = 1;
+const MIN_Y_INDEX = 2;
+const MAX_Y_INDEX = 3;
+let chunkToBan = [null, null, null, null];
+
 // By default the chunk at the middle is the chunk 0 0
 let defaultMidScreenChunk = {x: 0, y: 0};
 
@@ -80,10 +90,10 @@ class Map extends Component {
         // Create a new zoomIdentity (and place the chunk at the middle of the screen)
         zoomIdentity = d3.zoomIdentity;
         // zoomIdentity.x = (Math.floor(mapSize[0] / 2) * chunkSize * blockSize);
-        zoomIdentity.x = width/2 - (chunkSize * blockSize)/2;
+        zoomIdentity.x = width / 2 - (chunkSize * blockSize) / 2;
         // zoomIdentity.y = (Math.floor(mapSize[1] / 2) * chunkSize * blockSize);
-        zoomIdentity.y = height/2 - (chunkSize * blockSize)/2;
-        zoomIdentity.k = 1;
+        zoomIdentity.y = height / 2 - (chunkSize * blockSize) / 2;
+        zoomIdentity.k = 0.9;
 
         // Use this data
         this.drawMap(zoomIdentity);
@@ -137,11 +147,9 @@ class Map extends Component {
 
     drawMap = (transform) => {
 
-        lastTransform = transform;
-
         // We now need to know which chunk is in the middle of the screen (after translating)
-        defaultMidScreenChunk.x = Math.floor((zoomIdentity.x - transform.x + (chunkSize * blockSize * transform.k)/2) / (chunkSize * blockSize * transform.k));
-        defaultMidScreenChunk.y = Math.floor((zoomIdentity.y - transform.y + (chunkSize * blockSize * transform.k)/2) / (chunkSize * blockSize * transform.k));
+        defaultMidScreenChunk.x = Math.floor((zoomIdentity.x - transform.x + (chunkSize * blockSize * transform.k) / 2) / (chunkSize * blockSize * transform.k));
+        defaultMidScreenChunk.y = Math.floor((zoomIdentity.y - transform.y + (chunkSize * blockSize * transform.k) / 2) / (chunkSize * blockSize * transform.k));
 
         // We need to clean up the gMain element first
         d3.select('#gMain').selectAll('*').remove();
@@ -151,13 +159,6 @@ class Map extends Component {
         context.translate(transform.x, transform.y);
         context.scale(transform.k, transform.k);
         context.beginPath();
-
-        // paint to virtual canvas
-        virtualContext.save();
-        virtualContext.clearRect(0, 0, width, height);
-        virtualContext.translate(transform.x, transform.y);
-        virtualContext.scale(transform.k, transform.k);
-        virtualContext.beginPath();
 
         // We get the size of the screen and we want to know how many chunks we can have in the screen
         let nbChunksX = Math.ceil((width / (chunkSize * blockSize * transform.k)));
@@ -171,43 +172,62 @@ class Map extends Component {
         let chunksToShow = [];
         for (let i = rangeOfChunksX[0]; i <= rangeOfChunksX[1]; i++) {
             for (let j = rangeOfChunksY[0]; j <= rangeOfChunksY[1]; j++) {
-                chunksToShow.push(data[`x:${i}, y:${j}`]);
+                chunksToShow.push({x: i, y: j});
             }
         }
-
-        // We remove all the undefined (if the world is smaller than the nb of chunks to see)
-        chunksToShow = chunksToShow.filter(d => d);
-
-        let i = 0;
 
         // We loop through the available chunks
         chunksToShow.forEach((chunk) => {
 
-            // We loop through the chunk data which will be the columns
-            chunk.data.forEach((chunkDataCol, indexBlockY) => {
+            // Here we want to know if we can skip this chunk as it might not exists
+            if (chunkToBan[MIN_X_INDEX] !== null && chunk.x <= chunkToBan[MIN_X_INDEX]) {
+                return;
+            }
 
-                // And then we loop through the rows which will be the blocks
-                chunkDataCol.forEach((block, indexBlockX) => {
+            if (chunkToBan[MAX_X_INDEX] !== null && chunk.x >= chunkToBan[MAX_X_INDEX]) {
+                return;
+            }
 
-                    // Get the color unique for the mapping data
-                    const color = Map.getColor(i);
-                    colorToData[color] = block;
+            if (chunkToBan[MIN_Y_INDEX] !== null && chunk.y <= chunkToBan[MIN_Y_INDEX]) {
+                return;
+            }
 
-                    // Paint the virtual canvas
-                    virtualContext.strokeStyle = 'rgba(0,0,0,0)';
-                    virtualContext.fillStyle = color;
-                    virtualContext.lineWidth = 0;
-                    virtualContext.fillRect(((chunk.x * chunkSize) + indexBlockX) * blockSize, ((chunk.y * chunkSize) + indexBlockY) * blockSize, blockSize, blockSize);
+            if (chunkToBan[MAX_Y_INDEX] !== null && chunk.y >= chunkToBan[MAX_Y_INDEX]) {
+                return;
+            }
 
-                    // Paint the real canvas
-                    context.strokeStyle = 'rgba(0,0,0,0)';
-                    context.fillStyle = block;
-                    context.lineWidth = 0;
-                    context.fillRect(((chunk.x * chunkSize) + indexBlockX) * blockSize, ((chunk.y * chunkSize) + indexBlockY) * blockSize, blockSize, blockSize);
+            // Check if the img already exists and create one if it is
+            let node = d3.select(`#img_${chunk.x}_${chunk.y}`).node();
 
-                    i++;
-                });
-            });
+            // If it has not been loaded we load it and draw it
+            if (node === null) {
+                node = d3.select('#imageDiv')
+                    .append('img')
+                    .attr('id', `img_${chunk.x}_${chunk.y}`)
+                    .attr('width', `${chunkSize * blockSize}`)
+                    .attr('height', `${chunkSize * blockSize}`)
+                    .attr('src', `uploads/${chunk.x}_${chunk.y}.png`)
+                    .node();
+
+                // If we got an error that means we cannot go any further and we will prevent the usage from going into that direction
+                node.onerror = () => {
+                    // We get the coordinates of the chuck that hasn't be loaded and find if it can be excluded
+                    this.findChunksToExclude({x: chunk.x, y: chunk.y});
+                }
+
+                node.onload = function () {
+                    context.drawImage(node, chunk.x * chunkSize * blockSize, chunk.y * chunkSize * blockSize, chunkSize * blockSize, chunkSize * blockSize);
+                }
+            }
+
+            // As it already exists we draw it
+            else {
+
+                // Here I still want to know if the image exists (if we are at the edge we dont have an image and thus we cannot go any further)
+                if (node.complete && node.naturalHeight !== 0) {
+                    context.drawImage(node, chunk.x * chunkSize * blockSize, chunk.y * chunkSize * blockSize, chunkSize * blockSize, chunkSize * blockSize);
+                }
+            }
 
             // We add a box to each chunks
             let rect = d3.select('#gMain').append('rect')
@@ -237,17 +257,63 @@ class Map extends Component {
 
         context.fill();
         context.restore();
+    };
 
-        virtualContext.fill();
-        virtualContext.restore();
+    // This function is used to find the chunks to exclude that is to say the ones that do not exists
+    findChunksToExclude = (chunkNotLoaded) => {
+
+        // We have a chunk not loaded but for the moment we don't know in which direction this chunk is not loaded
+        notLoadedChunks.push(chunkNotLoaded);
+
+        let lastX = null;
+        let lastY = null;
+
+        for (let currentChunk of notLoadedChunks) {
+
+            // If the last x is equal to the the x of the currentChunk that mean all the chunk with a x greater (or less) than currentChunk.x must not be downloaded
+            if (lastX !== null && lastX === currentChunk.x) {
+
+                // Know we want to check if it is positive x or negative x
+                if (currentChunk.x >= 0) {
+                    chunkToBan[MAX_X_INDEX] = currentChunk.x;
+                } else {
+                    chunkToBan[MIN_X_INDEX] = currentChunk.x;
+                }
+
+                // We return (and purge the notLoadedChunks list ?)
+                notLoadedChunks = [];
+                return;
+            }
+
+            // If the last y is equal to the the y of the currentChunk that mean all the chunk with a y greater (or less) than currentChunk.y must not be downloaded
+            if (lastY !== null && lastY === currentChunk.y) {
+
+                // Know we want to check if it is positive x or negative x
+                if (currentChunk.y >= 0) {
+                    chunkToBan[MAX_Y_INDEX] = currentChunk.y;
+                } else {
+                    chunkToBan[MIN_Y_INDEX] = currentChunk.y;
+                }
+
+                // We return (and purge the notLoadedChunks list ?)
+                notLoadedChunks = [];
+                return;
+            }
+
+            lastX = currentChunk.x;
+            lastY = currentChunk.y;
+        }
     };
 
     render() {
         return (
             <>
-                <canvas id="canvas" style={{border: "2px solid gold", width: '100%', height: '100%', position: 'absolute'}}>
+                <canvas id="canvas"
+                        style={{border: "2px solid gold", width: '100%', height: '100%', position: 'absolute'}}>
 
                 </canvas>
+                <div id="imageDiv" style={{display: 'none'}}>
+                </div>
                 <svg id="svg" style={{border: "2px solid gold", width: '100%', height: '100%', position: 'absolute'}}>
 
                     <g id="gMain">
@@ -259,56 +325,5 @@ class Map extends Component {
         );
     };
 }
-
-Map.getRandomInteger = (min = 0, max) => {
-    return Math.floor(Math.random() * (max - min)) + min;
-};
-
-// Generate a terrain from a size
-Map.generateData = (mapSize) => {
-
-    let data = {};
-
-    d3.range(mapSize[0]).map((_, i) => {
-        d3.range(mapSize[1]).map((_, j) => {
-            data[`x:${i - Math.floor(mapSize[0] / 2)}, y:${j - Math.floor(mapSize[1] / 2)}`] = Map.generateChunk((-Math.floor(mapSize[0] / 2)) + i, (-Math.floor(mapSize[1] / 2)) + j);
-        });
-    });
-
-    return data;
-};
-
-// Create a chunk randomly (chunkSize x chunkSize)
-Map.generateChunk = (chunkX, chunkY) => {
-    return {
-        x: chunkX,
-        y: chunkY,
-        data: d3.range(chunkSize).map((i) => {
-            return d3.range(chunkSize).map((j) => {
-                return idColorMapping[Map.getRandomInteger(0, Object.keys(idColorMapping).length)];
-            })
-        })
-    }
-};
-
-/*
- * We're doing some bit-shifting here to more clearly illustrate how
- * to derive a color from a number, but you could accomplish the same
- * thing using modulo arithmetic and division! Check out the examples
- * to see an alternative approach
- */
-Map.getColor = (index) => {
-    return d3.rgb(
-        (index & 0b111111110000000000000000) >> 16,
-        (index & 0b000000001111111100000000) >> 8,
-        (index & 0b000000000000000011111111))
-        .toString();
-};
-
-
-// Get random data
-const data = Map.generateData(mapSize);
-
-console.log(data);
 
 export default Map;
