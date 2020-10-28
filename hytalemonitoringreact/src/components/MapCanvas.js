@@ -12,7 +12,7 @@ const idColorMapping = {
 };
 
 // Size of a "block" in px
-const blockSize = 20;
+const blockSize = 32;
 
 // chunk size in blocks
 const chunkSize = 16;
@@ -206,7 +206,8 @@ class Map extends Component {
                     .attr('id', `img_${chunk.x}_${chunk.y}`)
                     .attr('width', `${chunkSize * blockSize}`)
                     .attr('height', `${chunkSize * blockSize}`)
-                    .attr('src', `uploads/${chunk.x}_${chunk.y}.png`)
+                    // .attr('src', `uploads/${chunk.x}_${chunk.y}.png`)
+                    .attr('src', `/api/tile/${chunk.x}/${chunk.y}/1`)
                     .node();
 
                 // If we got an error that means we cannot go any further and we will prevent the usage from going into that direction

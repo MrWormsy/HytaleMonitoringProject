@@ -10,14 +10,15 @@
     "connect-redis": "^5.0.0",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
+    "dotenv": "latest",
     "ejs": "~2.6.1",
     "es6-promise": "^4.2.8",
     "express": "~4.16.1",
     "http-errors": "~1.6.3",
     "mongoose": "^5.10.9",
     "morgan": "~1.9.1",
-    "redis": "^3.0.2",
-    "dotenv": "latest"
+    "pngjs": "^6.0.0",
+    "redis": "^3.0.2"
   },
   "devDependencies": {
     "connect-busboy": "0.0.2",

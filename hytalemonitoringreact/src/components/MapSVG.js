@@ -1,18 +1,7 @@
 import React, {Component} from 'react';
 
 import * as d3 from 'd3';
-
-// MapSVG the id with a color
-const idColorMapping = {
-    0: "#eacbea",
-    1: "#ea7f3c",
-    2: "#5fea8e",
-    3: "#4b5aea",
-    4: "#9b42ea",
-};
-
-// Size of a "block" in px
-const blockSize = 5;
+import * as d3tile from 'd3-tile';
 
 class MapSVG extends Component {
 
@@ -20,54 +9,57 @@ class MapSVG extends Component {
         super(props);
     }
 
-    // Generate a terrain from a size
-    generateData = (size) => {
-        return d3.range(size).map((i) => {
-            return d3.range(size).map((j) => {
-               return this.getRandomInteger(0, Object.keys(idColorMapping).length);
-            });
-        })
-    };
-
     componentDidMount() {
 
-        // Get the SVG object
-        this.svg = d3.select("#svg");
+        // Get the width and the height of the map
+        const width = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0)
+        const height = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0)
 
-        this.gMap = this.svg.append('g')
-            .attr('id', "gMap");
+        const svg = d3.select("#rootMap").append("svg")
+            .attr("viewBox", [0, 0, width, height]);
 
-        // Get random data
-        let data = this.generateData(5);
+        const tile = d3tile.tile()
+            .extent([[0, 0], [width, height]])
+            .tileSize(512)
+            .clampX(true)
+            .clampY(true);
 
-        // Use this data
+        const zoom = d3.zoom()
 
-        // First we loop through the first layer (columns)
-        data.forEach((col, indexCol) => {
+            // Now i get from z = 0 to z = 10
+            .scaleExtent([512, 512000])
+            .extent([[0, 0], [width, height]])
+            .on("zoom", ({transform}) => zoomed(transform));
 
-            // Then we loop through the second layer (rows)
-            col.forEach((row, indexRow) => {
+        let image = svg.append("g")
+            .attr("pointer-events", "none")
+            .selectAll("image");
 
-                this.gMap.append('rect')
-                    .attr('width', blockSize)
-                    .attr('height', blockSize)
+        let url = (x, y, z) => `/api/tile/${x}/${y}/${z}`;
 
-            });
-        });
+        svg
+            .call(zoom)
+            .call(zoom.transform, d3.zoomIdentity
+                .translate(width >> 1, height >> 1)
+                .scale(65536));
 
+        function zoomed(transform) {
+            const tiles = tile(transform);
+
+            image = image.data(tiles, d => d).join("image")
+                .attr("xlink:href", d => url(...d3tile.tileWrap(d)))
+                .attr("x", ([x]) => (x + tiles.translate[0]) * tiles.scale)
+                .attr("y", ([, y]) => (y + tiles.translate[1]) * tiles.scale)
+                .attr("width", tiles.scale)
+                .attr("height", tiles.scale);
+        }
     }
 
     render() {
         return (
-            <svg id="svg" style={{border: "2px solid gold", width: '100%', height: '100%'}}>
-
-            </svg>
+            <div id="rootMap"/>
         );
     };
-
-    getRandomInteger(min = 0, max) {
-        return Math.floor(Math.random() * (max - min) ) + min;
-    }
 }
 
 export default MapSVG;
