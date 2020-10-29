@@ -52,6 +52,13 @@ fs.createReadStream('./public/ressources/5.png')
         images["5"] = resize(this, ressourceImageSize, ressourceImageSize);
     });
 
+let testImage;
+fs.createReadStream('./public/ressources/test.png')
+    .pipe(new PNG())
+    .on('parsed', function() {
+        testImage = this;
+    });
+
 // The max number of dezoom is 6 (that is equivalent to 64 * 64 chunks and 1024 * 1024 block which is more than enough)
 const maxZoomLevel = 6;
 
@@ -65,6 +72,11 @@ const levelsOfZoom = 16;
 // FIXME NOT SO SURE NOW IT IS MAYBE A MISTAKE
 // The levels of zoom is 16 that means that when z=1 we can have 2^16 = 65536 that is to say the span of x is [-2^15 -1, 2^15] like signed integers
 // That is to say for a given z the x range is [-2^levelsOfZoom-1, 2^levelsOfZoom-1] and x should be shifted to -2^levelsOfZoom-1 to be centered to 0 (same thing with y)
+
+
+router.get('/api/tiletest/:x/:y/:z', ((req, res) => {
+    resize(testImage, 512, 512).pack().pipe(res);
+}));
 
 router.get('/api/tile/:x/:y/:z', ((req, res) => {
 
@@ -88,6 +100,8 @@ router.get('/api/tile/:x/:y/:z', ((req, res) => {
 
     x += (-Math.pow(2, levelsOfZoom - z));
     y += (-Math.pow(2, levelsOfZoom - z));
+
+    z = 17 - z;
 
     // If x=0 and y=0
     // k = 1 => [[0, 0]]
@@ -115,7 +129,7 @@ router.get('/api/tile/:x/:y/:z', ((req, res) => {
             // console.log(key)
 
             if (!chunk) {
-                chunk = [...Array(16 * 16).keys()].map(() => getRandomInteger(1, 5));
+                chunk = [...Array(16 * 16).keys()].map(() => getRandomInteger(1, 6));
             }
 
             chunk.forEach((d, i) => {

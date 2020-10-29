@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import MapCanvas from "../MapCanvas";
 import ChunkGenerator from "../ChunkGenerator";
 import MapSVG from "../MapSVG";
+import MapLeaflet from "../MapLeaflet";
 
 class HomePage extends Component {
 
@@ -10,9 +11,19 @@ class HomePage extends Component {
     }
 
     render() {
+
+        /*
         return (
             <>
             <MapSVG/>
+            </>
+        );
+         */
+
+
+        return (
+            <>
+                <MapLeaflet/>
             </>
         );
     }
