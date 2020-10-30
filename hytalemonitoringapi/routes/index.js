@@ -74,6 +74,10 @@ const levelsOfZoom = 16;
 // That is to say for a given z the x range is [-2^levelsOfZoom-1, 2^levelsOfZoom-1] and x should be shifted to -2^levelsOfZoom-1 to be centered to 0 (same thing with y)
 
 
+
+// Maximum value of zoom
+const maxLevelOfZoom = 16;
+
 router.get('/api/tiletest/:x/:y/:z', ((req, res) => {
     resize(testImage, 512, 512).pack().pipe(res);
 }));
@@ -97,31 +101,18 @@ router.get('/api/tile/:x/:y/:z', ((req, res) => {
     let z = +req.params.z;
 
     // We shift x and y to the middle
+    x += (-Math.pow(2, maxLevelOfZoom - z));
+    y += (-Math.pow(2, maxLevelOfZoom - z));
 
-    x += (-Math.pow(2, levelsOfZoom - z));
-    y += (-Math.pow(2, levelsOfZoom - z));
-
-    z = 17 - z;
-
-    // If x=0 and y=0
-    // k = 1 => [[0, 0]]
-    // k = 2 => [[0, 0], [1, 0], [0, 1], [1, 1]]
-
-    // If k = 1 the chunks will be 1*1 => [x_y]
-    // If k = 2 the chunks will be 2*2 => [x_y, x+1_y, x_y+1, x+1_y+1]
-    // If k = 3 the chunks will be 4*4
-    // Thus the chunks will be (2^k-1) * (2^k-1)
-
-    let twoPowZMinusOne = (Math.pow(2, z - 1));
-
+    // The is used not to calculate this value each time
+    let twoPowZMinusOne = Math.pow(2, z - 1);
 
     // We create a destination image with the scale
-    let dst = new PNG({width: chunkImageSize * (twoPowZMinusOne), height: chunkImageSize * (twoPowZMinusOne)});
+    let dst = new PNG({width: chunkImageSize * twoPowZMinusOne, height: chunkImageSize * twoPowZMinusOne});
 
     let chunk, key;
     for (let nbChunkX = 0; nbChunkX < twoPowZMinusOne; nbChunkX++) {
         for (let nbChunkY = 0; nbChunkY < twoPowZMinusOne; nbChunkY++) {
-            // chunk = [...Array(16 * 16).keys()].map(() => getRandomInteger(0, 4));
 
             key = `${x * twoPowZMinusOne + nbChunkX}_${y * twoPowZMinusOne + nbChunkY}`;
 
@@ -142,36 +133,21 @@ router.get('/api/tile/:x/:y/:z', ((req, res) => {
     }
 
     resize(dst, imageSize, imageSize).pack().pipe(res);
-
-    /*
-    fs.createReadStream('./public/ressources/5.png')
-        .pipe(new PNG())
-        .on('parsed', function() {
-
-            this.bitblt(dst, 0, 0, 64, 64, 0, 0);
-            this.bitblt(dst, 0, 0, 64, 64, 0, 64);
-            this.bitblt(dst, 0, 0, 64, 64, 64, 0);
-            this.bitblt(dst, 0, 0, 64, 64, 64, 64);
-
-            dst.pack().pipe(res);
-        });
-     */
-
 }));
 
 
 function resize(srcPng, width, height) {
-    var rez = new PNG({
-        width:width,
-        height:height
+    let rez = new PNG({
+        width: width,
+        height: height
     });
-    for(var i = 0; i < width; i++) {
-        var tx = i / width,
+    for(let i = 0; i < width; i++) {
+        let tx = i / width,
             ssx = Math.floor(tx * srcPng.width);
-        for(var j = 0; j < height; j++) {
-            var ty = j / height,
+        for(let j = 0; j < height; j++) {
+            let ty = j / height,
                 ssy = Math.floor(ty * srcPng.height);
-            var indexO = (ssx + srcPng.width * ssy) * 4,
+            let indexO = (ssx + srcPng.width * ssy) * 4,
                 indexC = (i + width * j) * 4,
                 rgbaO = [
                     srcPng.data[indexO  ],
