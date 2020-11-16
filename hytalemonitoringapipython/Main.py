@@ -51,8 +51,66 @@ def getSectionXAndY(x, y):
 
     return [sectionX, sectionY, relativeX, relativeY]
 
+
 @app.route('/api/tile/<int:x>/<int:y>/<int:z>')
 def getTile(x, y, z):
+
+    global bufferDict
+
+    # We shift x and y to the middle
+    x -= 2 ** (MAX_LEVEL_OF_ZOOM - z)
+    y -= 2 ** (MAX_LEVEL_OF_ZOOM - z)
+
+    # The is used not to calculate this value each time
+    twoPowZMinusOne = 2 ** (z - 1)
+
+    x *= twoPowZMinusOne
+    y *= twoPowZMinusOne
+
+    # print("x:%s - y:%s" % (x, y))
+
+    # Create a new Image with a given size
+    image = Image.new(mode="RGBA", size=(IMAGE_SIZE * twoPowZMinusOne, IMAGE_SIZE * twoPowZMinusOne))
+
+    # Get the coordinates of the upper right chunk
+    sectionCoord = getSectionXAndY(x, y)
+
+    # Now we want to gather an image which has a length of twoPowZMinusOne chunks from the top left chunk
+    left = (sectionCoord[2]) * (RESSOURCE_IMAGE_SIZE * CHUNK_SIZE)
+    top = (sectionCoord[3]) * (RESSOURCE_IMAGE_SIZE * CHUNK_SIZE)
+    width = (RESSOURCE_IMAGE_SIZE * CHUNK_SIZE) * twoPowZMinusOne
+    height = (RESSOURCE_IMAGE_SIZE * CHUNK_SIZE) * twoPowZMinusOne
+
+    box = (left, top, left + width, top + height)
+
+    try:
+        # image.paste(bufferDict["%s_%s" % (sectionCoord[0], sectionCoord[1])].crop(box).resize((int(IMAGE_SIZE), int(IMAGE_SIZE))), (0, 0))
+
+        # Create the buffer array and write the image within it
+        imageByteArray = io.BytesIO()
+        bufferDict["%s_%s" % (sectionCoord[0], sectionCoord[1])].crop(box).resize((int(IMAGE_SIZE), int(IMAGE_SIZE))).save(imageByteArray, format='PNG')
+
+        # Send the image
+        return send_file(
+            io.BytesIO(imageByteArray.getvalue()),
+            mimetype='image/png',
+            as_attachment=True,
+            attachment_filename="%s_%s_%s.png" % (x, y, z))
+    except:
+        imageByteArray = io.BytesIO()
+        Image.new(mode="RGBA", size=(IMAGE_SIZE * twoPowZMinusOne, IMAGE_SIZE * twoPowZMinusOne)).save(imageByteArray, format='PNG')
+
+        # Send the image
+        return send_file(
+            io.BytesIO(imageByteArray.getvalue()),
+            mimetype='image/png',
+            as_attachment=True,
+            attachment_filename="%s_%s_%s.png" % (x, y, z))
+
+
+"""
+@app.route('/api/tilev1/<int:x>/<int:y>/<int:z>')
+def getTileV1(x, y, z):
 
     global bufferDict
 
@@ -103,6 +161,7 @@ def getTile(x, y, z):
         mimetype='image/png',
         as_attachment=True,
         attachment_filename="%s_%s_%s.png" % (x, y, z))
+"""
 
 def generateChunkData():
     return [random.randint(0, 5) for i in range(CHUNK_SIZE * CHUNK_SIZE)]
@@ -154,7 +213,12 @@ def getChunkHighestBlocks(chunk):
 def openImagesInBuffer():
     for file in os.listdir("./regionImages"):
         if file.endswith(".png"):
-            bufferDict[file.replace("region_", "").replace(".png", "")] = Image.open('./regionImages/' + file)
+
+            image = Image.open('./regionImages/' + file)
+
+            image.load()
+
+            bufferDict[file.replace("region_", "").replace(".png", "")] = image
 
     print("Images have been loaded")
 
@@ -165,5 +229,5 @@ if __name__ == '__main__':
     openImagesInBuffer()
 
     # Run the server
-    app.run(host='0.0.0.0', port=3000, debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=3000, debug=False, threaded=False)
     # app.run(host='0.0.0.0', port=3000, debug=False, threaded=False)

@@ -52,7 +52,7 @@ function getChunkImagePath(chunkId) {
 const storage = multer.diskStorage({
     destination: "./public/uploads/",
     filename: function (req, file, cb) {
-        cb(null, req.params.chunkId + "." +  file.mimetype.split('/')[1]);
+        cb(null, req.params.chunkId + "." + file.mimetype.split('/')[1]);
     }
 });
 

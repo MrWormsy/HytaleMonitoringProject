@@ -16,6 +16,7 @@ let imageSize = 512;
 
 let sectionImages = {};
 
+/*
 ["0_0","0_-2","0_-1","1_-1","1_0","1_-2","-1_0","-1_-1","-1_-2"].forEach((d) => {
     fs.createReadStream('./public/ressources/regionImages/region_' + d + ".png")
         .pipe(new PNG())
@@ -24,6 +25,8 @@ let sectionImages = {};
             console.log("DONE")
         });
 })
+
+ */
 
 let images = {};
 
@@ -83,8 +86,22 @@ const levelsOfZoom = 16;
 // Maximum value of zoom
 const maxLevelOfZoom = 16;
 
-
 router.get('/api/tile/:x/:y/:z', ((req, res) => {
+    // res.sendFile('chunkImage/chunk_0_0.png');
+
+    let x = +req.params.x;
+    let y = +req.params.y;
+    let z = +req.params.z;
+
+    // We shift x and y to the middle
+    x += (-Math.pow(2, maxLevelOfZoom - z));
+    y += (-Math.pow(2, maxLevelOfZoom - z));
+
+    res.sendFile(`chunk_${x}_${y}.png`, { root: __dirname + '/../public/chunkImages/' });
+}))
+
+
+router.get('/api2/tile/:x/:y/:z', ((req, res) => {
 
     let x = +req.params.x;
     let y = +req.params.y;
@@ -100,31 +117,22 @@ router.get('/api/tile/:x/:y/:z', ((req, res) => {
     x *= twoPowZMinusOne
     y *= twoPowZMinusOne
 
-    let dst = new PNG({width: imageSize, height: imageSize});
+    let dst = new PNG({width: (ressourceImageSize * blockPerChunks) * twoPowZMinusOne, height: (ressourceImageSize * blockPerChunks) * twoPowZMinusOne});
 
-    for (let xShifting of [...Array(twoPowZMinusOne).keys()].map((_, i) => i)) {
-        for (let yShifting of [...Array(twoPowZMinusOne).keys()].map((_, i) => i)) {
-
-            let sectionCoord = getSectionXAndY(x + xShifting, y + yShifting)
+    let sectionCoord = getSectionXAndY(x, y)
 
             let left = (sectionCoord[2]) * (ressourceImageSize * blockPerChunks)
             let top = (sectionCoord[3]) * (ressourceImageSize * blockPerChunks)
-            let width = (ressourceImageSize * blockPerChunks)
-            let height = (ressourceImageSize * blockPerChunks)
-
-            let box = (left, top, left + width, top + height)
+            let width = (ressourceImageSize * blockPerChunks) * twoPowZMinusOne
+            let height = (ressourceImageSize * blockPerChunks) * twoPowZMinusOne
 
             // We check if the section exists
             if (sectionImages.hasOwnProperty(`${sectionCoord[0]}_${sectionCoord[1]}`)) {
 
-                let temp = new PNG({ width: (ressourceImageSize * blockPerChunks), height: (ressourceImageSize * blockPerChunks)});
-
-                sectionImages[`${sectionCoord[0]}_${sectionCoord[1]}`].bitblt(temp , left, top, width, height, 0, 0)
+                sectionImages[`${sectionCoord[0]}_${sectionCoord[1]}`].bitblt(dst , left, top, width, height, 0, 0)
 
                 // Now we want to past temp to dst
-                resize(temp, imageSize / twoPowZMinusOne, imageSize / twoPowZMinusOne).bitblt(dst, 0, 0, 0, 0, xShifting * (imageSize / twoPowZMinusOne), yShifting * (imageSize / twoPowZMinusOne))
-            }
-        }
+                //resize(temp, imageSize / twoPowZMinusOne, imageSize / twoPowZMinusOne).bitblt(dst, 0, 0, 0, 0, xShifting * (imageSize / twoPowZMinusOne), yShifting * (imageSize / twoPowZMinusOne))
     }
 
     dst.pack().pipe(res);

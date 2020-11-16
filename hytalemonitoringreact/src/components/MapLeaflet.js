@@ -37,11 +37,42 @@ class MapLeaflet extends Component {
 
     initMap = () => {
 
+        L.TileLayer.MyCustomLayer = L.TileLayer.extend({
+            getTileUrl: function(coords) {
+
+                let x = coords.x;
+                let y = coords.y;
+                let z = options.maxZoom - coords.z + options.zoomOffset;
+
+                // We shift x and y to the middle
+                x += (-Math.pow(2, (options.maxZoom - 1) - z));
+                y += (-Math.pow(2, (options.maxZoom - 1) - z));
+
+                // The is used not to calculate this value each time
+                let twoPowZMinusOne = Math.pow(2, z - 1);
+
+                /*
+                x *= twoPowZMinusOne
+                y *= twoPowZMinusOne
+
+
+                 */
+                let letCoords = {x: x, y: y, z: z}
+
+                return L.TileLayer.prototype.getTileUrl.call(this, letCoords);
+            }
+        });
+
+        L.tileLayer.myCustomLayer = function(templateUrl, options) {
+            return new L.TileLayer.MyCustomLayer(templateUrl, options);
+        }
+
         // We create the map
         map = L.map('mapid').setView([0, 0], 17);
 
         // We add the tileLayer which is connected to our API (Where we will be only able to have 6 levels of zoom from -1 to -6)
-        L.tileLayer('/api/tile/{x}/{y}/{z}', {
+        // L.tileLayer.myCustomLayer('/api/tile/{x}/{y}/{z}', {
+        L.tileLayer.myCustomLayer('http://localhost:8080/levels/level{z}/{x}_{y}.png', {
             attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
             maxZoom: options.maxZoom,
             minZoom: options.minZoom,
@@ -87,6 +118,7 @@ class MapLeaflet extends Component {
     // Highlight a given chunk
     highlightChunk = (chunk) => {
 
+        /*
         var circle = L.rectangle([[0, 0], [0, 16], [16, 0], [16, 16]], {
             color: 'red',
             fillColor: '#f03',
@@ -95,7 +127,7 @@ class MapLeaflet extends Component {
             width: 100,
             height: 100
         }).addTo(map);
-
+         */
     };
 
     // When the component has been mounted we can proceed with the map
