@@ -12,7 +12,7 @@ const options =
         maxZoom: 17,
 
         // Min zoom
-        minZoom: 12,
+        minZoom: 13,
 
         // Map id
         id: 'HytaleMonitoringMap',
