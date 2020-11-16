@@ -8,19 +8,24 @@ const PNG = require('pngjs').PNG;
 // Default chunk image size which is the size of the ressource in px * 16
 const blockPerChunks = 16;
 
-const ressourceImageSize = 16;
+const ressourceImageSize = 32;
 
 const chunkImageSize = ressourceImageSize * blockPerChunks;
 
 let imageSize = 512;
 
-let images = {};
+let sectionImages = {};
 
-fs.createReadStream('./public/ressources/0.png')
-    .pipe(new PNG())
-    .on('parsed', function() {
-        images["0"] = resize(this, ressourceImageSize, ressourceImageSize);
-    });
+["0_0","0_-2","0_-1","1_-1","1_0","1_-2","-1_0","-1_-1","-1_-2"].forEach((d) => {
+    fs.createReadStream('./public/ressources/regionImages/region_' + d + ".png")
+        .pipe(new PNG())
+        .on('parsed', function() {
+            sectionImages[d] = this
+            console.log("DONE")
+        });
+})
+
+let images = {};
 
 fs.createReadStream('./public/ressources/1.png')
     .pipe(new PNG())
@@ -78,11 +83,81 @@ const levelsOfZoom = 16;
 // Maximum value of zoom
 const maxLevelOfZoom = 16;
 
+
+router.get('/api/tile/:x/:y/:z', ((req, res) => {
+
+    let x = +req.params.x;
+    let y = +req.params.y;
+    let z = +req.params.z;
+
+    // We shift x and y to the middle
+    x += (-Math.pow(2, maxLevelOfZoom - z));
+    y += (-Math.pow(2, maxLevelOfZoom - z));
+
+    // The is used not to calculate this value each time
+    let twoPowZMinusOne = Math.pow(2, z - 1);
+
+    x *= twoPowZMinusOne
+    y *= twoPowZMinusOne
+
+    let dst = new PNG({width: imageSize, height: imageSize});
+
+    for (let xShifting of [...Array(twoPowZMinusOne).keys()].map((_, i) => i)) {
+        for (let yShifting of [...Array(twoPowZMinusOne).keys()].map((_, i) => i)) {
+
+            let sectionCoord = getSectionXAndY(x + xShifting, y + yShifting)
+
+            let left = (sectionCoord[2]) * (ressourceImageSize * blockPerChunks)
+            let top = (sectionCoord[3]) * (ressourceImageSize * blockPerChunks)
+            let width = (ressourceImageSize * blockPerChunks)
+            let height = (ressourceImageSize * blockPerChunks)
+
+            let box = (left, top, left + width, top + height)
+
+            // We check if the section exists
+            if (sectionImages.hasOwnProperty(`${sectionCoord[0]}_${sectionCoord[1]}`)) {
+
+                let temp = new PNG({ width: (ressourceImageSize * blockPerChunks), height: (ressourceImageSize * blockPerChunks)});
+
+                sectionImages[`${sectionCoord[0]}_${sectionCoord[1]}`].bitblt(temp , left, top, width, height, 0, 0)
+
+                // Now we want to past temp to dst
+                resize(temp, imageSize / twoPowZMinusOne, imageSize / twoPowZMinusOne).bitblt(dst, 0, 0, 0, 0, xShifting * (imageSize / twoPowZMinusOne), yShifting * (imageSize / twoPowZMinusOne))
+            }
+        }
+    }
+
+    dst.pack().pipe(res);
+
+}));
+
+function getSectionXAndY(x, y) {
+    // We first need to get the section where the chunk is and then the x and y relative positions of the chunk (the Top left)
+    let sectionX = x >> 5
+    let sectionY = y >> 5
+
+    relativeX = 0
+    if (x >= 0) {
+        relativeX = x % 32
+    } else {
+        relativeX = (x + 32) % 32
+    }
+
+    relativeY = 0
+    if (y >= 0) {
+        relativeY = y % 32
+    } else {
+        relativeY = (y + 32) % 32
+    }
+
+    return [sectionX, sectionY, relativeX, relativeY]
+}
+
 router.get('/api/tiletest/:x/:y/:z', ((req, res) => {
     resize(testImage, 512, 512).pack().pipe(res);
 }));
 
-router.get('/api/tile/:x/:y/:z', ((req, res) => {
+router.get('/api/tileold/:x/:y/:z', ((req, res) => {
 
     let fs = require('fs');
 
