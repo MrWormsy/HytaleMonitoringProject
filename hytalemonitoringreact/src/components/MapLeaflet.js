@@ -3,7 +3,11 @@ import React, {Component} from 'react';
 import * as L from 'leaflet';
 import '../css/map.css';
 
+import { socket } from "./routing/Routes";
+
 let map;
+
+let playersMarkers = {};
 
 // Options
 const options =
@@ -33,6 +37,8 @@ class MapLeaflet extends Component {
         super(props);
 
         this.state = {map: undefined};
+
+        // We have to gather the data of the map like the zones, the markers, the texts
     }
 
     initMap = () => {
@@ -209,9 +215,62 @@ class MapLeaflet extends Component {
 
     // When the component has been mounted we can proceed with the map
     componentDidMount() {
+
+        // SocketIO part
+        socket.emit("initial_data");
+
+        // When we receive a playersEvent message we handle it
+        // It will contain the players infos
+        socket.on("playersEvent", this.onPlayerEventHandle);
+
         this.initMap();
 
         this.highlightChunkWorldPosition(0, 0, 31, 31, "white")
+    }
+
+    /* Removing the listener before unmounting the component in order to avoid addition of multiple listener at the time revisit*/
+    componentWillUnmount() {
+        socket.off("playersEvent");
+    }
+
+    // Handle the playersEvent
+    onPlayerEventHandle = (message) => {
+
+        // We want to have a list of the players in the message to know if someone is not disconnected
+        let playersOnline = [];
+
+        // We want to loop trough all the players
+        for (const [player, position] of Object.entries(message)) {
+
+            playersOnline.push(player);
+
+            // Create popup if not exists
+            if (!playersMarkers.hasOwnProperty(player)) {
+
+                // Create a marker and bind it to the player
+                let marker = L.marker(this.getLatLngFromWorldPosition(position.x, position.z),{icon: L.icon({iconUrl: `https://minotar.net/avatar/${player}/32.png`, iconSize: [32, 32], iconAnchor: [0, 0], popupAnchor: [16, -8]})}).addTo(map);
+                marker.bindPopup(player);
+
+                // Add the marker to the array
+                playersMarkers[player] = marker;
+            }
+
+            // Else we move it
+            else {
+                playersMarkers[player].setLatLng(this.getLatLngFromWorldPosition(position.x, position.z))
+            }
+        }
+
+        // At the end we want to remove the players that have been disconnected thus we compare the array of online users and the array we have in local
+        Object.keys(playersMarkers).filter((p) => {return !playersOnline.includes(p)}).forEach((p) => {
+            // Remove the marker and the entry
+            map.removeLayer(playersMarkers[p])
+            delete playersMarkers[p]
+        })
+    }
+
+    onDisconnect = () => {
+        // socket.disconnect();
     }
 
     render() {

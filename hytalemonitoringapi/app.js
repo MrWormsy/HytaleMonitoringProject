@@ -4,6 +4,7 @@ const Routes = require('./routes');
 const redis = require('redis');
 const redisStore = require('connect-redis')(session);
 const client = redis.createClient();
+const cors = require('cors');
 
 const dotenv = require('dotenv');
 dotenv.config();
@@ -12,6 +13,17 @@ dotenv.config();
 const app = express();
 let port = 3000;
 const server = require('http').Server(app).listen(port);
+
+app.use(cors());
+
+const io = require("socket.io")(server, {
+    cors: {
+        origin: "http://localhost",
+        methods: ["GET", "POST"],
+        credentials: true,
+        transports: ['websocket']
+    }
+});
 
 // Session part
 app.use(session({
@@ -49,5 +61,30 @@ let dirViews = [path.join(__dirname, './views')];
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('views', dirViews);
 app.set('view engine', 'ejs');
+
+// SocketIO
+// We create the namespace myHytaleServer which handles only the myHytaleServer "channel"
+const myHytaleServer = io.of('/myHytaleServer');
+
+// We listen to the client's connections and get a socket only for the myHytaleServer' channel
+myHytaleServer.once('connection', function (socket) {
+
+    /*
+    let counter = 0;
+    setInterval(() => {
+        myHytaleServer.emit('playersEvent', {"MrWormsy": {x:0, z: ++counter}});
+    }, 1000);
+     */
+
+    socket.on('disconnect', function() {
+
+        socket.disconnect()
+
+        // console.log(socket)
+    });
+
+});
+
+module.exports.myHytaleServer = myHytaleServer;
 
 console.log("waiting on localhost:" + port);

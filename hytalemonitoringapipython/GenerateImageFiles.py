@@ -3,6 +3,7 @@ from PIL import Image
 import anvil
 import time
 import threading
+from Textures import Textures
 
 RESSOURCE_IMAGE_SIZE = 32
 CHUNK_SIZE = 16
@@ -242,6 +243,31 @@ def getYTexture(chunk, x, z):
     # Return the image of the y coordinate
     return image
 
+def getYTextureIsometric(chunk, x, z):
+
+    # Create a new Image with a given size
+    image = Image.new(mode = "RGBA", size = (24, 24))
+
+    texture = Textures()
+
+    dirt = Image.open('ressources/grass_side.png')
+    grass = Image.open('ressources/grass_block.png')
+
+    newImage = texture.build_block(grass, dirt)
+
+    # Loop through all the blocks in the chunk from the bottom to the top
+    for y in range(256):
+        try:
+            block = chunk.get_block(x=x, y=y, z=z)
+            if (not block.id == "air"):
+                image = Image.blend(image, newImage, alpha=1)
+                # image.paste(imgs[block.id], (0, 0))
+        except:
+            pass
+
+    # Return the image of the y coordinate
+    return image
+
 def createLevelNImagesFromRegionId(regionId, level):
 
     # Get the region coordinates
@@ -305,6 +331,8 @@ if __name__ == '__main__':
     # The first thing we want to do it to create the images for the chunks which will be the level 1
     # createChunkImagesFromRegion(regions[0][0], regions[0][1])
 
+    # FLAT MAP
+    """
     # Loop for maxImageLevel levels
     for level in range(1, maxImageLevel + 1):
 
@@ -325,14 +353,35 @@ if __name__ == '__main__':
     # createLevelNImagesFromRegionId(regions[0][1], 4)
     # createLevelNImagesFromRegionId(regions[0][1], 5)
     # createLevelNImagesFromRegionId(regions[0][1], 6)
+    
+    """
 
 
 
 
+    region = anvil.Region.from_file('./regions/r.0.0.mca')
+
+    image = Image.new(mode = "RGBA", size = (24 * CHUNK_SIZE, 24 * CHUNK_SIZE))
 
 
+    try:
+        # Get the chunk
+        chunk = region.get_chunk(12, 1)
 
+        for x in range(16):
+            for z in range(16):
 
+                screenX = int((x * 24  / 2) + (z * 24  / 2))
+                screenY = int((z * 24 / 2) - (x * 24 / 2)) + (12 * CHUNK_SIZE)
+
+                texture = getYTextureIsometric(chunk, x, z)
+
+                image.paste(texture, (screenX, screenY), texture)
+    except:
+        pass
+
+    # Save the image
+    image.save("isoChunk.png")
 
 
 

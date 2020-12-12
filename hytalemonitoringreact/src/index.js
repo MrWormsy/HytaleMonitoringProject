@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {BrowserRouter as Router} from 'react-router-dom'
-import Routes from "./components/routing/Routes";
+import {Routes} from "./components/routing/Routes";
 
 ReactDOM.render(<Router><Routes/></Router>, document.getElementById('root'));
