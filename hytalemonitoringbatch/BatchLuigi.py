@@ -45,7 +45,8 @@ class StepPurge(luigi.Task):
             outfile.write('Step one begins\n')
 
 
-# Step that takes the data of the last hour from the bulk data
+# Step that takes the data of the last hour (all the data of the collection to be precise, as it is run every hours the
+# remaining data will be the data of the past hour) from the bulk data
 class StepGetLastHourDataForServer(luigi.Task):
 
     # The constructor
@@ -74,13 +75,10 @@ class StepGetLastHourDataForServer(luigi.Task):
 
             self.timestampAtBatch = time.time() * 1000
 
-            # Number of ms in an hour
-            oneHourInMs = 60 * 60 * 1000
-
             # We want to get the data of the last hour (in ms) AND the server
             # Loop through the data and keep only the timestamps and the players
             for currentData in bulkdataCollection.find(
-                    {"server": ObjectId(self.serverId), "timestamp": {"$gte": self.timestampAtBatch - oneHourInMs}}):
+                    {"server": ObjectId(self.serverId), "timestamp": {"$lte": self.timestampAtBatch}}):
 
                 # Get the max and the min timestamp
                 if self.minTimestamp is None or self.maxTimestamp is None:
