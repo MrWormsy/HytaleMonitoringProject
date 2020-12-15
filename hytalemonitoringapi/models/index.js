@@ -33,10 +33,26 @@ const HourlyPlayersDensitySchema =
             ref: 'server'
         },
         players: {
+            type: [String],
+            default: []
+        },
+    }, {collection: 'hourlyplayersdensity'});
+
+const DailyPlayersDensitySchema =
+    new Schema({
+        timestamp: {
+            type: Number,
+            default: Date.now
+        },
+        server: {
+            type: Schema.Types.ObjectId,
+            ref: 'server'
+        },
+        players: {
             type: Number,
             default: 0
         },
-    }, {collection: 'hourlyplayersdensity'});
+    }, {collection: 'dailyplayersdensity'});
 
 const PlayerStatsSchema =
     new Schema({
@@ -88,5 +104,6 @@ module.exports = {
     Server: mongoose.model('server', ServerSchema),
     BulkData: mongoose.model('bulkdata', BulkDataSchema),
     HourlyPlayersDensity: mongoose.model('hourlyplayersdensity', HourlyPlayersDensitySchema),
+    DailyPlayersDensity: mongoose.model('dailyplayersdensity', DailyPlayersDensitySchema),
     PlayerStats: mongoose.model('playerstats', PlayerStatsSchema),
 };

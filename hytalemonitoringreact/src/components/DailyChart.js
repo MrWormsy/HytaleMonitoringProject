@@ -13,11 +13,9 @@ const qs = require('qs');
 
 const range = [0, 256];
 
-// const chartWidth = window.width;
-// const chartHeight = 60;
 const chartMargin = {top: 10, right: 0, bottom: 0, left: 0};
 
-class WeeklyChart extends Component {
+class DailyChart extends Component {
 
     constructor(props) {
         super(props);
@@ -253,4 +251,4 @@ class WeeklyChart extends Component {
     }
 }
 
-export default WeeklyChart;
+export default DailyChart;

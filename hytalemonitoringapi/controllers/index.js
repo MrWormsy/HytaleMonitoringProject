@@ -53,6 +53,43 @@ const getLastWeeklyPlayerDensityOfServer = async (serverId) => {
             // Give the data needed
             let currentData = {};
             currentData["timestamp"] = data.timestamp;
+            currentData["players"] = data.players.length;
+
+            // Push the data to the acc
+            acc.push(currentData);
+
+            return acc;
+        }, response);
+
+        // Set the response as the result (if it is null that means this server does not exist)
+        // response = result;
+    }).catch(error => {
+
+        // If we get an error the response will be null
+        response = null;
+    })
+
+    // Return the response
+    return response;
+}
+
+// Get the density of the last 25 days (if there is no data we send 0)
+const getDailyDensity = async (serverId) => {
+
+    // The limit (the last 25 days)
+    let limit = 7 * 24;
+
+    // The response
+    let response = [];
+
+    await Models.HourlyPlayersDensity.find({server: serverId}).sort({$natural:-1}).limit(limit).then((result) => {
+
+        // We first want to loop through the response and only keep the number of players and the timestamp
+        result.reduce((acc, data) => {
+
+            // Give the data needed
+            let currentData = {};
+            currentData["timestamp"] = data.timestamp;
             currentData["players"] = data.players;
 
             // Push the data to the acc

@@ -1,4 +1,5 @@
 import time
+import os
 
 from random import seed, randint
 
@@ -19,6 +20,7 @@ bulkdataCollection = hytaleMonitoringDatabase['bulkdata']
 hourlyplayersdensityCollection = hytaleMonitoringDatabase['hourlyplayersdensity']
 playerstatsCollection = hytaleMonitoringDatabase['playerstats']
 
+server = "5fbacfa1b9445012ab8b7271"
 
 def generateDummyBulkData(serverId):
     now = time.time() * 1000
@@ -35,7 +37,20 @@ def generateDummyBulkData(serverId):
     # Insert the data
     bulkdataCollection.insert_many(data)
 
-server = "5fbacfa1b9445012ab8b7271"
+
+def runBatch():
+    stream = os.popen('/media/mrwormsy/Data/Projects/Hytale/HytaleMonitoring/venv/bin/python /media/mrwormsy/Data/Projects/Hytale/HytaleMonitoring/hytalemonitoringbatch/BatchLuigi.py --local-scheduler MainBatch')
+    output = stream.read()
+
+
+def runOneWeekBatchWithDummyData():
+
+    # The idea here is to run generateDummyBulkData and then run the batch 24 * 7 = 168 times
+    for i in range(168):
+        generateDummyBulkData(server)
+        runBatch()
+
 
 if __name__ == '__main__':
-    generateDummyBulkData(server)
+    # generateDummyBulkData(server)
+    runOneWeekBatchWithDummyData()

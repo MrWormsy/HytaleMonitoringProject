@@ -1,6 +1,9 @@
 # luigid &
 # python3 BatchLuigi.py --scheduler-host localhost MainBatch
 
+# Hourly --> python3 BatchLuigi.py --scheduler-host localhost StepProcessHourlyBatchOnServer --serverId=5fbacfa1b9445012ab8b7271
+# Daily --> python3 BatchLuigi.py --scheduler-host localhost StepProcessDailyBatchOnServer --serverId=5fbacfa1b9445012ab8b7271
+
 import os
 import pprint
 import time
@@ -20,6 +23,7 @@ hytaleMonitoringDatabase = mongoClient['hytalemonitoring']
 # The collections
 bulkdataCollection = hytaleMonitoringDatabase['bulkdata']
 hourlyplayersdensityCollection = hytaleMonitoringDatabase['hourlyplayersdensity']
+dailyplayersdensityCollection = hytaleMonitoringDatabase['dailyplayersdensity']
 playerstatsCollection = hytaleMonitoringDatabase['playerstats']
 
 # The server ids we want to proceed
@@ -96,8 +100,8 @@ class StepGetLastHourDataForServer(luigi.Task):
                 self.maxTimestamp = self.timestampAtBatch
 
 
-# Get the player density of last our for a given server
-class StepGetHourPlayerDensity(luigi.Task):
+# Get the player density of last hour for a given server
+class StepGetHourlyPlayerDensity(luigi.Task):
 
     # The constructor
     def __init__(self, *args, **kwargs):
@@ -140,7 +144,7 @@ class StepGetHourPlayerDensity(luigi.Task):
             # where the timestamp is the minimum timestamp of the data
             hourlyplayersdensityCollection.insert_one(
                 {"timestamp": self.stepGetLastHourDataForServer.minTimestamp, "server": ObjectId(self.serverId),
-                 "players": len(self.uniquePlayers)})
+                 "players": list(self.uniquePlayers)})
 
 
 # Update the time spent of a player on a server
@@ -176,7 +180,6 @@ class StepUpdatePlayerTimeSpentOnServer(luigi.Task):
             playerTimeSpentDict = {}
 
             lastTimestamp = None
-            timeSpent = None
             for data in self.stepGetLastHourDataForServer.lastHourData:
 
                 # If this is not the first element we can proceed, otherwise we wait
@@ -222,7 +225,7 @@ class StepProcessHourlyBatchOnServer(luigi.Task):
         self.stepGetLastHourDataForServer = None
 
         # This step is used to get get the hourly density of a server in term of players
-        self.stepGetHourPlayerDensity = None
+        self.stepGetHourlyPlayerDensity = None
 
         # This step is used to update the time spent of a list of player on a given server
         self.stepUpdatePlayerTimeSpentOnServer = None
@@ -233,10 +236,10 @@ class StepProcessHourlyBatchOnServer(luigi.Task):
     # It requires the StepGetLastHourDataForServer for the server
     def requires(self):
         self.stepGetLastHourDataForServer = StepGetLastHourDataForServer(self.serverId)
-        self.stepGetHourPlayerDensity = StepGetHourPlayerDensity(self.serverId)
+        self.stepGetHourlyPlayerDensity = StepGetHourlyPlayerDensity(self.serverId)
         self.stepUpdatePlayerTimeSpentOnServer = StepUpdatePlayerTimeSpentOnServer(self.serverId)
 
-        return [self.stepGetLastHourDataForServer, self.stepGetHourPlayerDensity,
+        return [self.stepGetLastHourDataForServer, self.stepGetHourlyPlayerDensity,
                 self.stepUpdatePlayerTimeSpentOnServer]
 
     # The output
@@ -252,6 +255,133 @@ class StepProcessHourlyBatchOnServer(luigi.Task):
             # gathered before the launch of the batch (TEST : OK)
             bulkdataCollection.delete_many({"server": ObjectId(self.serverId),
                                             "timestamp": {"$lte": self.stepGetLastHourDataForServer.maxTimestamp}})
+
+
+# Step that takes the data of the last day from the collection hourlyplayersdensity
+class StepGetLastDayDataForServer(luigi.Task):
+
+    # The constructor
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lastDayData = []
+        self.timestampAtBatch = None
+        self.minTimestamp = None
+        self.maxTimestamp = None
+
+    # This step takes a parameter (the serverId)
+    serverId = luigi.Parameter()
+
+    # Step that requires the purge
+    def requires(self):
+        return StepPurge()
+
+    # The output
+    def output(self):
+        return luigi.LocalTarget(TASK_DATA_FOLDER + 'StepGetLastDayDataForServer_{}log'.format(self.serverId))
+
+    # Run the Step
+    def run(self):
+        with self.output().open('w') as outfile:
+            outfile.write('StepGetLastDayDataForServer for server {} begins\n'.format(self.serverId))
+
+            self.timestampAtBatch = time.time() * 1000
+
+            # We want to get the data of the last day (of a given server), that is to say the 24 last documents
+            # inserted inserted in the collection hourlyplayersdensity.
+            # Loop through the data and keep only the timestamps and the unique players
+            for currentData in hourlyplayersdensityCollection.find({"server": ObjectId(self.serverId), "timestamp": {"$lte": self.timestampAtBatch}}).sort([("$natural", -1)]).limit(24):
+
+                # Get the max and the min timestamp
+                if self.minTimestamp is None or self.maxTimestamp is None:
+                    self.minTimestamp = currentData["timestamp"]
+                    self.maxTimestamp = currentData["timestamp"]
+                else:
+                    self.minTimestamp = min(self.minTimestamp, currentData["timestamp"])
+                    self.maxTimestamp = max(self.maxTimestamp, currentData["timestamp"])
+
+                self.lastDayData.append({"timestamp": currentData["timestamp"], "players": currentData["players"]})
+
+            # If there is no data and thus minTimestamp and maxTimestamp are None we set it as now
+            if self.minTimestamp is None or self.maxTimestamp is None:
+                self.minTimestamp = self.timestampAtBatch
+                self.maxTimestamp = self.timestampAtBatch
+
+
+# Get the player density of last day for a given server
+class StepGetDailyPlayerDensity(luigi.Task):
+
+    # The constructor
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # The needed step
+        self.stepGetLastDayDataForServer = None
+
+        # The unique player during last hour
+        self.uniquePlayers = None
+
+    # This step takes a parameter (the serverId)
+    serverId = luigi.Parameter()
+
+    # It requires the StepGetLastHourDataForServer for the server
+    def requires(self):
+        self.stepGetLastDayDataForServer = StepGetLastDayDataForServer(self.serverId)
+
+        return self.stepGetLastDayDataForServer
+
+    # The output
+    def output(self):
+        return luigi.LocalTarget(TASK_DATA_FOLDER + 'StepGetDailyPlayerDensity_{}log'.format(self.serverId))
+
+    # Run
+    def run(self):
+        with self.output().open('w') as outfile:
+            outfile.write('StepGetDailyPlayerDensity for server {} begins\n'.format(self.serverId))
+
+            # The unique players set
+            self.uniquePlayers = set()
+
+            # We want to get the unique players that have been in the server the past day
+            for data in self.stepGetLastDayDataForServer.lastDayData:
+                # As we are working with a set we just have to add the data
+                # and it will check if a player must be added or not
+                self.uniquePlayers.update(data["players"])
+
+            print(len(self.uniquePlayers))
+
+            # When all the data has been processed we can save it to the database,
+            # where the timestamp is the minimum timestamp of the data (thus the beginning of the day)
+            dailyplayersdensityCollection.insert_one(
+                {"timestamp": self.stepGetLastDayDataForServer.minTimestamp, "server": ObjectId(self.serverId),
+                 "players": len(self.uniquePlayers)})
+
+# This is the batch called every day, which requires the steps that need to be run every day
+class StepProcessDailyBatchOnServer(luigi.Task):
+
+    # The constructor
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # This step is used to get get the daily density of a server in term of players
+        self.stepGetDailyPlayerDensity = None
+
+    # This step takes a parameter (the serverId)
+    serverId = luigi.Parameter()
+
+    # It requires the StepGetLastHourDataForServer for the server
+    def requires(self):
+        self.stepGetDailyPlayerDensity = StepGetDailyPlayerDensity(self.serverId)
+
+        return [self.stepGetDailyPlayerDensity]
+
+    # The output
+    def output(self):
+        return luigi.LocalTarget(TASK_DATA_FOLDER + 'StepProcessDailyBatchOnServer_{}log'.format(self.serverId))
+
+    # Run
+    def run(self):
+        with self.output().open('w') as outfile:
+            outfile.write('StepProcessDailyBatchOnServer for server {} begins\n'.format(self.serverId))
 
 
 class MainBatch(luigi.Task):

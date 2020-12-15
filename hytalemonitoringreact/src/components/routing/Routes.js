@@ -6,6 +6,7 @@ import socketIOClient from "socket.io-client";
 import ServerMap from "../pages/ServerMap";
 import ServerPage from "../pages/ServerPage";
 import WeeklyChart from "../WeeklyChart";
+import DailyChart from "../DailyChart";
 
 let socket;
 
@@ -28,6 +29,7 @@ class Routes extends Component {
                     <Route path="/home" component={HomePage}/>
                     <Route path="/viewserver/map/:serverid" component={ServerMap}/>
                     <Route path="/viewserver/weeklychart/:serverid" component={WeeklyChart}/>
+                    <Route path="/viewserver/dailychart/:serverid" component={DailyChart}/>
                     <Route path="/server/:serverid" component={ServerPage}/>
                 </Switch>
 
