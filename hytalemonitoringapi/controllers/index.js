@@ -60,9 +60,6 @@ const getLastWeeklyPlayerDensityOfServer = async (serverId) => {
 
             return acc;
         }, response);
-
-        // Set the response as the result (if it is null that means this server does not exist)
-        // response = result;
     }).catch(error => {
 
         // If we get an error the response will be null
@@ -77,12 +74,12 @@ const getLastWeeklyPlayerDensityOfServer = async (serverId) => {
 const getDailyDensity = async (serverId) => {
 
     // The limit (the last 25 days)
-    let limit = 7 * 24;
+    let limit = 25;
 
     // The response
     let response = [];
 
-    await Models.HourlyPlayersDensity.find({server: serverId}).sort({$natural:-1}).limit(limit).then((result) => {
+    await Models.DailyPlayersDensity.find({server: serverId}).sort({$natural:-1}).limit(limit).then((result) => {
 
         // We first want to loop through the response and only keep the number of players and the timestamp
         result.reduce((acc, data) => {
@@ -97,9 +94,6 @@ const getDailyDensity = async (serverId) => {
 
             return acc;
         }, response);
-
-        // Set the response as the result (if it is null that means this server does not exist)
-        // response = result;
     }).catch(error => {
 
         // If we get an error the response will be null

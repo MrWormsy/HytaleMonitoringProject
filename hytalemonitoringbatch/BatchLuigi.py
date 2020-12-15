@@ -347,8 +347,6 @@ class StepGetDailyPlayerDensity(luigi.Task):
                 # and it will check if a player must be added or not
                 self.uniquePlayers.update(data["players"])
 
-            print(len(self.uniquePlayers))
-
             # When all the data has been processed we can save it to the database,
             # where the timestamp is the minimum timestamp of the data (thus the beginning of the day)
             dailyplayersdensityCollection.insert_one(
