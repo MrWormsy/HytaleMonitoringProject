@@ -24,12 +24,25 @@ router.get('/api/server/:serverid', ((req, res) => {
 
 }));
 
-// Get a server by its id
+// Get the last 7 days player density (1 data equals 1 hour)
 // TODO CHANGE THE ID !!
-router.get('/api/server/weeklydensity/:serverid', ((req, res) => {
+router.get('/api/server/hourlydensity/:serverid', ((req, res) => {
 
     // Search a server by its ID req.params.serverid
-    controller.getLastWeeklyPlayerDensityOfServer("5fbacfa1b9445012ab8b7271").then((result) => {
+    controller.getHourlyPlayerDensity("5fbacfa1b9445012ab8b7271").then((result) => {
+        res.json(result);
+    }).catch((error) => {
+        res.json(error);
+    })
+
+}));
+
+// Get the last 25 days player density (1 data equals 1 day)
+// TODO CHANGE THE ID !!
+router.get('/api/server/dailydensity/:serverid', ((req, res) => {
+
+    // Search a server by its ID req.params.serverid
+    controller.getDailyDensity("5fbacfa1b9445012ab8b7271").then((result) => {
         res.json(result);
     }).catch((error) => {
         res.json(error);

@@ -34,10 +34,8 @@ const getServerByToken = async (token) => {
 }
 
 // Get the last 7 * 24 = 168 records from the hourly player density to have a vision of the density in the last week
-
-// FIXME We can do that or just send the data with less value and the frontend will deal with it
-// If there is no enough data (only 5 records for example) we can return 0s
-const getLastWeeklyPlayerDensityOfServer = async (serverId) => {
+// If there is less than 168 records, it doesn't mater, the front end will be able to deal with it
+const getHourlyPlayerDensity = async (serverId) => {
 
     // The limit
     let limit = 7 * 24;
@@ -70,7 +68,7 @@ const getLastWeeklyPlayerDensityOfServer = async (serverId) => {
     return response;
 }
 
-// Get the density of the last 25 days (if there is no data we send 0)
+// Get the density of the last 25 days
 const getDailyDensity = async (serverId) => {
 
     // The limit (the last 25 days)
@@ -156,4 +154,4 @@ const addServer = async (serverData) => {
 }
 
 // Exports all the functions
-module.exports = {getServerData, addServer, getServerByToken, saveBulkData, getLastWeeklyPlayerDensityOfServer};
+module.exports = {getServerData, addServer, getServerByToken, saveBulkData, getHourlyPlayerDensity, getDailyDensity};

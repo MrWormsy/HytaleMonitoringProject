@@ -34,14 +34,12 @@ class WeeklyChart extends Component {
         this.state = {serverid: props.serverid, data: null, minValue: 0, maxValue: 0, windowWidth: width, windowHeigh: height};
 
         // We get the server by its id
-        axios.get('/api/server/weeklydensity/' + this.props.match.params.serverid)
+        axios.get('/api/server/hourlydensity/' + this.props.match.params.serverid)
             .then((response) => response.data)
             .then((data) => {
 
                 // If the data gathered is an object and not null we know that this is the data we are looking for
                 if (data !== null && typeof data === "object") {
-
-                    console.log(data)
 
                     // Get the max of the data
                     let maximum = Math.max(...data.map(d => d.players));

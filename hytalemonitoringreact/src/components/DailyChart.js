@@ -1,9 +1,9 @@
 import React, {Component} from 'react';
 
 import {
-    ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip,
-    Legend,
+    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ScatterChart,
 } from 'recharts';
+
 import axios from "axios";
 import moment from "moment";
 
@@ -13,7 +13,7 @@ const qs = require('qs');
 
 const range = [0, 256];
 
-const chartMargin = {top: 10, right: 0, bottom: 0, left: 0};
+const chartMargin = {top: 5, right: 30, left: 20, bottom: 5};
 
 class DailyChart extends Component {
 
@@ -32,20 +32,18 @@ class DailyChart extends Component {
         this.state = {serverid: props.serverid, data: null, minValue: 0, maxValue: 0, windowWidth: width, windowHeigh: height};
 
         // We get the server by its id
-        axios.get('/api/server/weeklydensity/' + this.props.match.params.serverid)
+        axios.get('/api/server/dailydensity/' + this.props.match.params.serverid)
             .then((response) => response.data)
             .then((data) => {
 
                 // If the data gathered is an object and not null we know that this is the data we are looking for
                 if (data !== null && typeof data === "object") {
 
-                    console.log(data)
-
                     // Get the max of the data
                     let maximum = Math.max(...data.map(d => d.players));
 
                     // We set the state as the data we have gathered and we process it to have it for each hours
-                    this.setState({data: this.processWeeklyData(data), maxValue: maximum});
+                    this.setState({data: this.processData(data), maxValue: maximum});
                 }
 
                 // FIXME Do something
@@ -53,74 +51,35 @@ class DailyChart extends Component {
             });
     }
 
-    // Process the weekly data, that is to say we want to get the number of players for each hours and if there is no enough data we will have not to show a given amount of days
-    processWeeklyData = (data) => {
+    // Process the data, that is to say add a date string of the day like 04/12 in a local format
+    processData = (data) => {
 
-        // Now
-        const now = moment()
+        // The returned array
+        let processedData = [];
 
-        // Get the list of day from now to the one before us
-        let days = [];
-        for (let i = 0; i < 7; i++) {
-            days.push(moment().subtract(i, 'day').format("ddd"));
-        }
+        // Reduce the data to add the date formatted (which will be the (index + 1) days from today)
+        data.reduce((acc, value, index) => {
 
-        // We know that we have 7 * 24 values corresponding to the last 7 * 24 hours from now on (minus 1 because in the last hour we did not computed the data)
-        let hoursWithDays = [];
-        for (let i = 1; i <= 7 * 24; i++) {
-            hoursWithDays.push({timestamp: +moment().subtract(i, 'hour').format("x"), hour: moment().subtract(i, 'hour').format("ha"), day: moment().subtract(i, 'hour').format("ddd")});
-        }
+            // Push the new data with the old one
+            acc.push({timestamp: value.timestamp, "Player density": value.players + (Math.round((Math.random() * 1000)/2)), date: moment(value.timestamp).subtract(index + 1, "day").format("L")});
 
-        // The number of hours until 12PM (the -1 is used because we do not count this hour)
-        let nbHoursUntil12PM = 24 - (+now.format("H"))
+            // Return the acc
+            return acc;
+        }, processedData);
 
-        // Now we want to map each of those hours to the values we received and we know that the timestamps are
-        // decreasing, that is to say the first data corresponds of the last whole hour and so on...
-
-        // If there is no enough data we dont care and set 0
-        let mappedData = {}
-
-        for (let i = 0; i < hoursWithDays.length; i++) {
-
-            // If the mappedData does not have the day key, we add it
-            if (!mappedData.hasOwnProperty(hoursWithDays[i].day)) {
-                mappedData[hoursWithDays[i].day] = [];
+        // Compare two objects infos by the timestamp
+        function compareValues(a, b) {
+            if (!a.hasOwnProperty("timestamp") || !b.hasOwnProperty("timestamp")) {
+                return 0;
             }
-
-            // Get the value of this hour (if it exists in the data array).
-            // But we dont want the data of the next hours of last week, ie. if this is 8:29 PM we only want the data
-            // of today before 8PM, and thus 8PM = 0, 9PM = 0 and so on till midnight
-            let value = data.length > i ? data[i].players : 0;
-
-            if (i >= (7*24) - nbHoursUntil12PM) {
-                value = 0;
-            }
-
-            mappedData[hoursWithDays[i].day].push({hour: hoursWithDays[i].hour, index: 1, value: value, timestamp: hoursWithDays[i].timestamp});
+            return a["timestamp"] - b["timestamp"];
         }
 
-        // Compare two objects infos by the hour
-            function compareValues(a, b) {
-                if (!a.hasOwnProperty("hour") || !b.hasOwnProperty("hour")) {
-                    return 0;
-                }
-                return moment("1970/01/01 " + a["hour"], "YYYY-MM-DD ha") - moment("1970/01/01 " + b["hour"], "YYYY-MM-DD ha")
-            }
+        // Sort the array in timestamp ascending
+        processedData.sort(compareValues)
 
-        // Sort each arrays by the date
-        for (let key of Object.keys(mappedData)) {
-            // mappedData[key] = mappedData[key].reverse();
-            mappedData[key].sort(compareValues);
-        }
-
-        return mappedData;
+        return processedData;
     }
-
-    // Parse the domain of the data
-    parseDomain = () => [
-        this.state.minValue,
-        this.state.maxValue
-    ];
 
 
     // Used to render the tooltip
@@ -135,16 +94,21 @@ class DailyChart extends Component {
                     backgroundColor: '#fff', border: '1px solid #999', margin: 0, padding: 10,
                 }}
                 >
-                    <p>{moment(data.timestamp).format("LLL")}</p>
+                    <p>{moment(data.date).format("LL")}</p>
                     <p>
                         <span>Unique players online: </span>
-                        {d3.format(",")(data.value)}
+                        {d3.format(",")(data["Player density"])}
                     </p>
                 </div>
             );
         }
 
         return null;
+    }
+
+    // Tick formater
+    yTicksFormater = (data) => {
+        return d3.format(".2s")(data);
     }
 
     render() {
@@ -154,100 +118,21 @@ class DailyChart extends Component {
             return null;
         }
 
-        const domain = this.parseDomain();
-
-        const chartWidth = this.state.windowWidth;
-        const chartHeight = this.state.windowHeigh;
-
-        const xAxisInterval = 1;
-
-        return (
-            <div>
-                <ScatterChart
-                    width={chartWidth}
-                    height={chartHeight}
+                return (
+                <LineChart
+                    width={500}
+                    height={300}
+                    data={this.state.data}
                     margin={chartMargin}
                 >
-                    <XAxis type="category" dataKey="hour" interval={xAxisInterval} tick={{ fontSize: 0 }} tickLine={{ transform: 'translate(0, -6)' }} />
-                    <YAxis type="number" dataKey="index" name="sunday" height={10} width={80} tick={false} tickLine={false} axisLine={false} label={{ value: moment().subtract(6, 'day').format("ddd"), position: 'insideRight' }} />
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range} />
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis axisLine={true} dataKey="date" />
+                    <YAxis tickFormatter={this.yTicksFormater} domain={["dataMin", "dataMax"]} padding={{top: 10, bottom: 10}} />
+                    <Legend verticalAlign="top" height={36}/>
                     <Tooltip cursor={{ strokeDasharray: '3 3' }} wrapperStyle={{ zIndex: 100 }} content={this.renderTooltip} />
-                    <Scatter data={this.state.data[moment().subtract(6, 'day').format("ddd")]} fill="#8884d8" />
-                </ScatterChart>
-
-                <ScatterChart
-                    width={chartWidth}
-                    height={chartHeight}
-                    margin={chartMargin}
-                >
-                    <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{ fontSize: 0 }} tickLine={{ transform: 'translate(0, -6)' }} />
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false} axisLine={false} label={{ value: moment().subtract(5, 'day').format("ddd"), position: 'insideRight' }} />
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range} />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} wrapperStyle={{ zIndex: 100 }} content={this.renderTooltip} />
-                    <Scatter data={this.state.data[moment().subtract(5, 'day').format("ddd")]} fill="#8884d8" />
-                </ScatterChart>
-
-                <ScatterChart
-                    width={chartWidth}
-                    height={chartHeight}
-                    margin={chartMargin}
-                >
-                    <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{ fontSize: 0 }} tickLine={{ transform: 'translate(0, -6)' }} />
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false} axisLine={false} label={{ value: moment().subtract(4, 'day').format("ddd"), position: 'insideRight' }} />
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range} />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} wrapperStyle={{ zIndex: 100 }} content={this.renderTooltip} />
-                    <Scatter data={this.state.data[moment().subtract(4, 'day').format("ddd")]} fill="#8884d8" />
-                </ScatterChart>
-
-                <ScatterChart
-                    width={chartWidth}
-                    height={chartHeight}
-                    margin={chartMargin}
-                >
-                    <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{ fontSize: 0 }} tickLine={{ transform: 'translate(0, -6)' }} />
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false} axisLine={false} label={{ value: moment().subtract(3, 'day').format("ddd"), position: 'insideRight' }} />
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range} />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} wrapperStyle={{ zIndex: 100 }} content={this.renderTooltip} />
-                    <Scatter data={this.state.data[moment().subtract(3, 'day').format("ddd")]} fill="#8884d8" />
-                </ScatterChart>
-
-                <ScatterChart
-                    width={chartWidth}
-                    height={chartHeight}
-                    margin={chartMargin}
-                >
-                    <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{ fontSize: 0 }} tickLine={{ transform: 'translate(0, -6)' }} />
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false} axisLine={false} label={{ value: moment().subtract(2, 'day').format("ddd"), position: 'insideRight' }} />
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range} />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} wrapperStyle={{ zIndex: 100 }} content={this.renderTooltip} />
-                    <Scatter data={this.state.data[moment().subtract(2, 'day').format("ddd")]} fill="#8884d8" />
-                </ScatterChart>
-
-                <ScatterChart
-                    width={chartWidth}
-                    height={chartHeight}
-                    margin={chartMargin}
-                >
-                    <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{ fontSize: 0 }} tickLine={{ transform: 'translate(0, -6)' }} />
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false} axisLine={false} label={{ value: moment().subtract(1, 'day').format("ddd"), position: 'insideRight' }} />
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range} />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} wrapperStyle={{ zIndex: 100 }} content={this.renderTooltip} />
-                    <Scatter data={this.state.data[moment().subtract(1, 'day').format("ddd")]} fill="#8884d8" />
-                </ScatterChart>
-
-                <ScatterChart
-                    width={chartWidth}
-                    height={chartHeight}
-                    margin={chartMargin}
-                >
-                    <XAxis type="category" dataKey="hour" name="hour" interval={1} tickLine={{ transform: 'translate(0, -6)' }} />
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false} axisLine={false} label={{ value: moment().subtract(0, 'day').format("ddd"), position: 'insideRight' }} />
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range} />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} wrapperStyle={{ zIndex: 100 }} content={this.renderTooltip} />
-                    <Scatter data={this.state.data[moment().subtract(0, 'day').format("ddd")]} fill="#8884d8" />
-                </ScatterChart>
-            </div>
-        );
+                    <Line type="monotone" dataKey="Player density" stroke="#8884d8" activeDot={{ r: 8 }} />
+                </LineChart>
+                );
     }
 }
 

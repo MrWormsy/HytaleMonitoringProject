@@ -38,17 +38,28 @@ def generateDummyBulkData(serverId):
     bulkdataCollection.insert_many(data)
 
 
-def runBatch():
-    stream = os.popen('/media/mrwormsy/Data/Projects/Hytale/HytaleMonitoring/venv/bin/python /media/mrwormsy/Data/Projects/Hytale/HytaleMonitoring/hytalemonitoringbatch/BatchLuigi.py --local-scheduler MainBatch')
-    output = stream.read()
+def runHourlyBatch():
+    stream = os.popen('/media/mrwormsy/Data/Projects/Hytale/HytaleMonitoring/venv/bin/python /media/mrwormsy/Data/Projects/Hytale/HytaleMonitoring/hytalemonitoringbatch/BatchLuigi.py --local-scheduler StepProcessHourlyBatchOnServer --serverId=5fbacfa1b9445012ab8b7271')
+    stream.read()
+
+
+def runDailyBatch():
+    stream = os.popen('/media/mrwormsy/Data/Projects/Hytale/HytaleMonitoring/venv/bin/python /media/mrwormsy/Data/Projects/Hytale/HytaleMonitoring/hytalemonitoringbatch/BatchLuigi.py --local-scheduler StepProcessDailyBatchOnServer --serverId=5fbacfa1b9445012ab8b7271')
+    stream.read()
 
 
 def runOneWeekBatchWithDummyData():
 
-    # The idea here is to run generateDummyBulkData and then run the batch 24 * 7 = 168 times
-    for i in range(168):
+    # The idea here is to run generateDummyBulkData and then run the batch 24 * 7 * 25 = 168 * 25 times
+    for i in range(168 * 25):
         generateDummyBulkData(server)
-        runBatch()
+
+        # Every hour we want to run a hourly batch
+        runHourlyBatch()
+
+        # Every 24 hours we want to run a daily batch
+        if (i + 1) % 24 == 0:
+            runDailyBatch()
 
 
 if __name__ == '__main__':
