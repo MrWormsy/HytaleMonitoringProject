@@ -1,44 +1,44 @@
 <!DOCTYPE html>
-<html style="overflow: hidden; height: 100%" lang="en">
+<html lang="en" style="overflow: hidden; height: 100%">
 <head>
-  <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1" name="viewport">
-  <meta
-          content="Web site created using create-react-app"
-          name="Hytale Monitoring"
-  />
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta
+            content="Web site created using create-react-app"
+            name="Hytale Monitoring"
+    />
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-        integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
-        crossorigin=""/>
+    <link crossorigin="" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+          integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+          rel="stylesheet"/>
 
-  <!-- Make sure you put this AFTER Leaflet's CSS -->
-  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
-          integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
-          crossorigin=""></script>
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script crossorigin=""
+            integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+            src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
 </head>
 
 <body style="height: 100%; margin: 0">
 
-<div style="height:100%;" id="mapid"></div>
+<div id="mapid" style="height:100%;"></div>
 
-<div style="display: none" id="root"></div>
+<div id="root" style="display: none"></div>
 
 </body>
 
 <script>
 
-  var mymap = L.map('mapid').setView([0, 0], 17);
+    var mymap = L.map('mapid').setView([0, 0], 17);
 
-  L.tileLayer('http://localhost:3000/api/tile/{x}/{y}/{z}', {
-    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-    maxZoom: 17,
-    minZoom: 12,
-    id: 'mapbox/streets-v11',
-    tileSize: 512,
-    zoomOffset: -1
-  }).addTo(mymap);
+    L.tileLayer('http://localhost:3000/api/tile/{x}/{y}/{z}', {
+        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+        maxZoom: 17,
+        minZoom: 12,
+        id: 'mapbox/streets-v11',
+        tileSize: 512,
+        zoomOffset: -1
+    }).addTo(mymap);
 
 </script>
 

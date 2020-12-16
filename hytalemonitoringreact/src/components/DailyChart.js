@@ -1,8 +1,6 @@
 import React, {Component} from 'react';
 
-import {
-    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ScatterChart,
-} from 'recharts';
+import {CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,} from 'recharts';
 
 import axios from "axios";
 import moment from "moment";
@@ -20,8 +18,8 @@ class DailyChart extends Component {
     constructor(props) {
         super(props);
 
-        let width = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).width;
-        let height = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).height;
+        let width = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).width;
+        let height = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).height;
 
         width = width ? +width : 800;
         height = width ? ((+width) / 13.3333333333) : 60;
@@ -29,7 +27,14 @@ class DailyChart extends Component {
 
         // height = height ? +height : 60;
 
-        this.state = {serverid: props.serverid, data: null, minValue: 0, maxValue: 0, windowWidth: width, windowHeigh: height};
+        this.state = {
+            serverid: props.serverid,
+            data: null,
+            minValue: 0,
+            maxValue: 0,
+            windowWidth: width,
+            windowHeigh: height
+        };
 
         // We get the server by its id
         axios.get('/api/server/dailydensity/' + this.props.match.params.serverid)
@@ -61,7 +66,11 @@ class DailyChart extends Component {
         data.reduce((acc, value, index) => {
 
             // Push the new data with the old one
-            acc.push({timestamp: value.timestamp, "Player density": value.players + (Math.round((Math.random() * 1000)/2)), date: moment(value.timestamp).subtract(index + 1, "day").format("L")});
+            acc.push({
+                timestamp: value.timestamp,
+                "Player density": value.players + (Math.round((Math.random() * 1000) / 2)),
+                date: moment(value.timestamp).subtract(index + 1, "day").format("L")
+            });
 
             // Return the acc
             return acc;
@@ -118,21 +127,25 @@ class DailyChart extends Component {
             return null;
         }
 
-                return (
+        return (
+            <ResponsiveContainer width={700} aspect={16 / 9}>
                 <LineChart
                     width={500}
                     height={300}
                     data={this.state.data}
                     margin={chartMargin}
                 >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis axisLine={true} dataKey="date" />
-                    <YAxis tickFormatter={this.yTicksFormater} domain={["dataMin", "dataMax"]} padding={{top: 10, bottom: 10}} />
+                    <CartesianGrid strokeDasharray="3 3"/>
+                    <XAxis axisLine={true} dataKey="date"/>
+                    <YAxis tickFormatter={this.yTicksFormater} domain={["dataMin", "dataMax"]}
+                           padding={{top: 10, bottom: 10}}/>
                     <Legend verticalAlign="top" height={36}/>
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} wrapperStyle={{ zIndex: 100 }} content={this.renderTooltip} />
-                    <Line type="monotone" dataKey="Player density" stroke="#8884d8" activeDot={{ r: 8 }} />
+                    <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{zIndex: 100}}
+                             content={this.renderTooltip}/>
+                    <Line type="monotone" dataKey="Player density" stroke="#8884d8" activeDot={{r: 8}}/>
                 </LineChart>
-                );
+            </ResponsiveContainer>
+        );
     }
 }
 

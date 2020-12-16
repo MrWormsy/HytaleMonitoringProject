@@ -16,7 +16,11 @@ class Routes extends Component {
         super();
 
         const uri = 'http://localhost:3000/myHytaleServer';
-        const options = {withCredentials: true, extraHeaders: {"Access-Control-Allow-Credentials": "true"}, 'transports': ['websocket']};
+        const options = {
+            withCredentials: true,
+            extraHeaders: {"Access-Control-Allow-Credentials": "true"},
+            'transports': ['websocket']
+        };
 
         socket = socketIOClient(uri, options);
     }
@@ -24,14 +28,14 @@ class Routes extends Component {
     render() {
         return (
 
-                <Switch>
-                    <Route exact path="/" component={HomePage}/>
-                    <Route path="/home" component={HomePage}/>
-                    <Route path="/viewserver/map/:serverid" component={ServerMap}/>
-                    <Route path="/viewserver/weeklychart/:serverid" component={WeeklyChart}/>
-                    <Route path="/viewserver/dailychart/:serverid" component={DailyChart}/>
-                    <Route path="/server/:serverid" component={ServerPage}/>
-                </Switch>
+            <Switch>
+                <Route exact path="/" component={HomePage}/>
+                <Route path="/home" component={HomePage}/>
+                <Route path="/viewserver/map/:serverid" component={ServerMap}/>
+                <Route path="/viewserver/weeklychart/:serverid" component={WeeklyChart}/>
+                <Route path="/viewserver/dailychart/:serverid" component={DailyChart}/>
+                <Route path="/server/:serverid" component={ServerPage}/>
+            </Switch>
 
         )
     }

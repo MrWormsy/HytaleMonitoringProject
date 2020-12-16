@@ -1,9 +1,6 @@
 import React, {Component} from 'react';
 
-import {
-    ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip,
-    Legend,
-} from 'recharts';
+import {Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis,} from 'recharts';
 import axios from "axios";
 import moment from "moment";
 
@@ -22,8 +19,8 @@ class WeeklyChart extends Component {
     constructor(props) {
         super(props);
 
-        let width = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).width;
-        let height = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).height;
+        let width = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).width;
+        let height = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).height;
 
         width = width ? +width : 800;
         height = width ? ((+width) / 13.3333333333) : 60;
@@ -31,7 +28,14 @@ class WeeklyChart extends Component {
 
         // height = height ? +height : 60;
 
-        this.state = {serverid: props.serverid, data: null, minValue: 0, maxValue: 0, windowWidth: width, windowHeigh: height};
+        this.state = {
+            serverid: props.serverid,
+            data: null,
+            minValue: 0,
+            maxValue: 0,
+            windowWidth: width,
+            windowHeigh: height
+        };
 
         // We get the server by its id
         axios.get('/api/server/hourlydensity/' + this.props.match.params.serverid)
@@ -68,7 +72,11 @@ class WeeklyChart extends Component {
         // We know that we have 7 * 24 values corresponding to the last 7 * 24 hours from now on (minus 1 because in the last hour we did not computed the data)
         let hoursWithDays = [];
         for (let i = 1; i <= 7 * 24; i++) {
-            hoursWithDays.push({timestamp: +moment().subtract(i, 'hour').format("x"), hour: moment().subtract(i, 'hour').format("ha"), day: moment().subtract(i, 'hour').format("ddd")});
+            hoursWithDays.push({
+                timestamp: +moment().subtract(i, 'hour').format("x"),
+                hour: moment().subtract(i, 'hour').format("ha"),
+                day: moment().subtract(i, 'hour').format("ddd")
+            });
         }
 
         // The number of hours until 12PM (the -1 is used because we do not count this hour)
@@ -92,20 +100,25 @@ class WeeklyChart extends Component {
             // of today before 8PM, and thus 8PM = 0, 9PM = 0 and so on till midnight
             let value = data.length > i ? data[i].players : 0;
 
-            if (i >= (7*24) - nbHoursUntil12PM) {
+            if (i >= (7 * 24) - nbHoursUntil12PM) {
                 value = 0;
             }
 
-            mappedData[hoursWithDays[i].day].push({hour: hoursWithDays[i].hour, index: 1, value: value, timestamp: hoursWithDays[i].timestamp});
+            mappedData[hoursWithDays[i].day].push({
+                hour: hoursWithDays[i].hour,
+                index: 1,
+                value: value,
+                timestamp: hoursWithDays[i].timestamp
+            });
         }
 
         // Compare two objects infos by the hour
-            function compareValues(a, b) {
-                if (!a.hasOwnProperty("hour") || !b.hasOwnProperty("hour")) {
-                    return 0;
-                }
-                return moment("1970/01/01 " + a["hour"], "YYYY-MM-DD ha") - moment("1970/01/01 " + b["hour"], "YYYY-MM-DD ha")
+        function compareValues(a, b) {
+            if (!a.hasOwnProperty("hour") || !b.hasOwnProperty("hour")) {
+                return 0;
             }
+            return moment("1970/01/01 " + a["hour"], "YYYY-MM-DD ha") - moment("1970/01/01 " + b["hour"], "YYYY-MM-DD ha")
+        }
 
         // Sort each arrays by the date
         for (let key of Object.keys(mappedData)) {
@@ -168,11 +181,15 @@ class WeeklyChart extends Component {
                     height={chartHeight}
                     margin={chartMargin}
                 >
-                    <XAxis type="category" dataKey="hour" interval={xAxisInterval} tick={{ fontSize: 0 }} tickLine={{ transform: 'translate(0, -6)' }} />
-                    <YAxis type="number" dataKey="index" name="sunday" height={10} width={80} tick={false} tickLine={false} axisLine={false} label={{ value: moment().subtract(6, 'day').format("ddd"), position: 'insideRight' }} />
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range} />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} wrapperStyle={{ zIndex: 100 }} content={this.renderTooltip} />
-                    <Scatter data={this.state.data[moment().subtract(6, 'day').format("ddd")]} fill="#8884d8" />
+                    <XAxis type="category" dataKey="hour" interval={xAxisInterval} tick={{fontSize: 0}}
+                           tickLine={{transform: 'translate(0, -6)'}}/>
+                    <YAxis type="number" dataKey="index" name="sunday" height={10} width={80} tick={false}
+                           tickLine={false} axisLine={false}
+                           label={{value: moment().subtract(6, 'day').format("ddd"), position: 'insideRight'}}/>
+                    <ZAxis type="number" dataKey="value" domain={domain} range={range}/>
+                    <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{zIndex: 100}}
+                             content={this.renderTooltip}/>
+                    <Scatter data={this.state.data[moment().subtract(6, 'day').format("ddd")]} fill="#8884d8"/>
                 </ScatterChart>
 
                 <ScatterChart
@@ -180,11 +197,15 @@ class WeeklyChart extends Component {
                     height={chartHeight}
                     margin={chartMargin}
                 >
-                    <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{ fontSize: 0 }} tickLine={{ transform: 'translate(0, -6)' }} />
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false} axisLine={false} label={{ value: moment().subtract(5, 'day').format("ddd"), position: 'insideRight' }} />
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range} />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} wrapperStyle={{ zIndex: 100 }} content={this.renderTooltip} />
-                    <Scatter data={this.state.data[moment().subtract(5, 'day').format("ddd")]} fill="#8884d8" />
+                    <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{fontSize: 0}}
+                           tickLine={{transform: 'translate(0, -6)'}}/>
+                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false}
+                           axisLine={false}
+                           label={{value: moment().subtract(5, 'day').format("ddd"), position: 'insideRight'}}/>
+                    <ZAxis type="number" dataKey="value" domain={domain} range={range}/>
+                    <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{zIndex: 100}}
+                             content={this.renderTooltip}/>
+                    <Scatter data={this.state.data[moment().subtract(5, 'day').format("ddd")]} fill="#8884d8"/>
                 </ScatterChart>
 
                 <ScatterChart
@@ -192,11 +213,15 @@ class WeeklyChart extends Component {
                     height={chartHeight}
                     margin={chartMargin}
                 >
-                    <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{ fontSize: 0 }} tickLine={{ transform: 'translate(0, -6)' }} />
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false} axisLine={false} label={{ value: moment().subtract(4, 'day').format("ddd"), position: 'insideRight' }} />
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range} />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} wrapperStyle={{ zIndex: 100 }} content={this.renderTooltip} />
-                    <Scatter data={this.state.data[moment().subtract(4, 'day').format("ddd")]} fill="#8884d8" />
+                    <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{fontSize: 0}}
+                           tickLine={{transform: 'translate(0, -6)'}}/>
+                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false}
+                           axisLine={false}
+                           label={{value: moment().subtract(4, 'day').format("ddd"), position: 'insideRight'}}/>
+                    <ZAxis type="number" dataKey="value" domain={domain} range={range}/>
+                    <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{zIndex: 100}}
+                             content={this.renderTooltip}/>
+                    <Scatter data={this.state.data[moment().subtract(4, 'day').format("ddd")]} fill="#8884d8"/>
                 </ScatterChart>
 
                 <ScatterChart
@@ -204,11 +229,15 @@ class WeeklyChart extends Component {
                     height={chartHeight}
                     margin={chartMargin}
                 >
-                    <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{ fontSize: 0 }} tickLine={{ transform: 'translate(0, -6)' }} />
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false} axisLine={false} label={{ value: moment().subtract(3, 'day').format("ddd"), position: 'insideRight' }} />
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range} />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} wrapperStyle={{ zIndex: 100 }} content={this.renderTooltip} />
-                    <Scatter data={this.state.data[moment().subtract(3, 'day').format("ddd")]} fill="#8884d8" />
+                    <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{fontSize: 0}}
+                           tickLine={{transform: 'translate(0, -6)'}}/>
+                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false}
+                           axisLine={false}
+                           label={{value: moment().subtract(3, 'day').format("ddd"), position: 'insideRight'}}/>
+                    <ZAxis type="number" dataKey="value" domain={domain} range={range}/>
+                    <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{zIndex: 100}}
+                             content={this.renderTooltip}/>
+                    <Scatter data={this.state.data[moment().subtract(3, 'day').format("ddd")]} fill="#8884d8"/>
                 </ScatterChart>
 
                 <ScatterChart
@@ -216,11 +245,15 @@ class WeeklyChart extends Component {
                     height={chartHeight}
                     margin={chartMargin}
                 >
-                    <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{ fontSize: 0 }} tickLine={{ transform: 'translate(0, -6)' }} />
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false} axisLine={false} label={{ value: moment().subtract(2, 'day').format("ddd"), position: 'insideRight' }} />
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range} />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} wrapperStyle={{ zIndex: 100 }} content={this.renderTooltip} />
-                    <Scatter data={this.state.data[moment().subtract(2, 'day').format("ddd")]} fill="#8884d8" />
+                    <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{fontSize: 0}}
+                           tickLine={{transform: 'translate(0, -6)'}}/>
+                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false}
+                           axisLine={false}
+                           label={{value: moment().subtract(2, 'day').format("ddd"), position: 'insideRight'}}/>
+                    <ZAxis type="number" dataKey="value" domain={domain} range={range}/>
+                    <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{zIndex: 100}}
+                             content={this.renderTooltip}/>
+                    <Scatter data={this.state.data[moment().subtract(2, 'day').format("ddd")]} fill="#8884d8"/>
                 </ScatterChart>
 
                 <ScatterChart
@@ -228,11 +261,15 @@ class WeeklyChart extends Component {
                     height={chartHeight}
                     margin={chartMargin}
                 >
-                    <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{ fontSize: 0 }} tickLine={{ transform: 'translate(0, -6)' }} />
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false} axisLine={false} label={{ value: moment().subtract(1, 'day').format("ddd"), position: 'insideRight' }} />
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range} />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} wrapperStyle={{ zIndex: 100 }} content={this.renderTooltip} />
-                    <Scatter data={this.state.data[moment().subtract(1, 'day').format("ddd")]} fill="#8884d8" />
+                    <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{fontSize: 0}}
+                           tickLine={{transform: 'translate(0, -6)'}}/>
+                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false}
+                           axisLine={false}
+                           label={{value: moment().subtract(1, 'day').format("ddd"), position: 'insideRight'}}/>
+                    <ZAxis type="number" dataKey="value" domain={domain} range={range}/>
+                    <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{zIndex: 100}}
+                             content={this.renderTooltip}/>
+                    <Scatter data={this.state.data[moment().subtract(1, 'day').format("ddd")]} fill="#8884d8"/>
                 </ScatterChart>
 
                 <ScatterChart
@@ -240,11 +277,15 @@ class WeeklyChart extends Component {
                     height={chartHeight}
                     margin={chartMargin}
                 >
-                    <XAxis type="category" dataKey="hour" name="hour" interval={1} tickLine={{ transform: 'translate(0, -6)' }} />
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false} axisLine={false} label={{ value: moment().subtract(0, 'day').format("ddd"), position: 'insideRight' }} />
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range} />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} wrapperStyle={{ zIndex: 100 }} content={this.renderTooltip} />
-                    <Scatter data={this.state.data[moment().subtract(0, 'day').format("ddd")]} fill="#8884d8" />
+                    <XAxis type="category" dataKey="hour" name="hour" interval={1}
+                           tickLine={{transform: 'translate(0, -6)'}}/>
+                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false}
+                           axisLine={false}
+                           label={{value: moment().subtract(0, 'day').format("ddd"), position: 'insideRight'}}/>
+                    <ZAxis type="number" dataKey="value" domain={domain} range={range}/>
+                    <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{zIndex: 100}}
+                             content={this.renderTooltip}/>
+                    <Scatter data={this.state.data[moment().subtract(0, 'day').format("ddd")]} fill="#8884d8"/>
                 </ScatterChart>
             </div>
         );

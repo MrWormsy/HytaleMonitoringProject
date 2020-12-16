@@ -1,9 +1,7 @@
 import React, {Component} from 'react';
-import MapLeaflet from "../MapLeaflet";
 import axios from 'axios';
 import LoaderSpinner from "../LoaderSpinner";
 import PlayersChart from "../PlayersChart";
-import WeeklyChart from "../WeeklyChart";
 
 class ServerPage extends Component {
 
@@ -32,18 +30,22 @@ class ServerPage extends Component {
 
     render() {
         return (
-                this.state.server ? (
+            this.state.server ? (
 
-                        <>
+                    <>
 
-                            <iframe src={"/viewserver/weeklychart/" + this.state.server._id + "?width=800&height=420"} width="800" height="420" frameBorder="0">Browser not compatible.</iframe>
+                        <iframe src={"/viewserver/weeklychart/" + this.state.server._id + "?width=800&height=420"}
+                                width="800" height="420" frameBorder="0">Browser not compatible.
+                        </iframe>
 
-                            <iframe src={"/viewserver/map/" + this.state.server._id} width="300" height="300" frameBorder="0">Browser not compatible.</iframe>
+                        <iframe src={"/viewserver/map/" + this.state.server._id} width="300" height="300"
+                                frameBorder="0">Browser not compatible.
+                        </iframe>
 
-                            <PlayersChart/>
+                        <PlayersChart/>
 
-                        </>
-                    )
+                    </>
+                )
                 :
 
                 <LoaderSpinner/>

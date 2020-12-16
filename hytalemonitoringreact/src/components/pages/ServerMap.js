@@ -31,7 +31,7 @@ class ServerMap extends Component {
     render() {
         return (
 
-                this.state.server ?
+            this.state.server ?
 
                 <MapLeaflet/>
 

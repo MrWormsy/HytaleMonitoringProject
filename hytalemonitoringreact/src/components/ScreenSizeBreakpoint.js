@@ -13,14 +13,14 @@ class ScreenSizeBreakpoint extends Component {
                 {/* Mobile */}
                 <MediaQuery maxDeviceWidth={768}>
                     <section style={{padding: "3rem 0.5rem"}} className="section">
-                    {this.props.children}
+                        {this.props.children}
                     </section>
                 </MediaQuery>
 
                 {/* Tablets */}
                 <MediaQuery minDeviceWidth={769} maxDeviceWidth={1023}>
                     <section style={{padding: "3rem 0.5rem"}} className="section">
-                    {this.props.children}
+                        {this.props.children}
                     </section>
                 </MediaQuery>
 

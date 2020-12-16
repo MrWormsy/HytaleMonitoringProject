@@ -3,7 +3,7 @@ import React, {Component} from 'react';
 import * as L from 'leaflet';
 import '../css/map.css';
 
-import { socket } from "./routing/Routes";
+import {socket} from "./routing/Routes";
 
 let map;
 
@@ -46,7 +46,7 @@ class MapLeaflet extends Component {
         let instance = this;
 
         L.TileLayer.MyCustomLayer = L.TileLayer.extend({
-            getTileUrl: function(coords) {
+            getTileUrl: function (coords) {
 
                 let x = coords.x;
                 let y = coords.y;
@@ -71,7 +71,7 @@ class MapLeaflet extends Component {
             }
         });
 
-        L.tileLayer.myCustomLayer = function(templateUrl, options) {
+        L.tileLayer.myCustomLayer = function (templateUrl, options) {
             return new L.TileLayer.MyCustomLayer(templateUrl, options);
         }
 
@@ -115,7 +115,7 @@ class MapLeaflet extends Component {
         };
 
         // This is used to get the coordinate
-        map.addEventListener('mousemove', function(event) {
+        map.addEventListener('mousemove', function (event) {
 
             // Get the lat and the lng of the mouse
             let lat = event.latlng.lat;
@@ -248,7 +248,14 @@ class MapLeaflet extends Component {
             if (!playersMarkers.hasOwnProperty(player)) {
 
                 // Create a marker and bind it to the player
-                let marker = L.marker(this.getLatLngFromWorldPosition(position.x, position.z),{icon: L.icon({iconUrl: `https://minotar.net/avatar/${player}/32.png`, iconSize: [32, 32], iconAnchor: [0, 0], popupAnchor: [16, -8]})}).addTo(map);
+                let marker = L.marker(this.getLatLngFromWorldPosition(position.x, position.z), {
+                    icon: L.icon({
+                        iconUrl: `https://minotar.net/avatar/${player}/32.png`,
+                        iconSize: [32, 32],
+                        iconAnchor: [0, 0],
+                        popupAnchor: [16, -8]
+                    })
+                }).addTo(map);
                 marker.bindPopup(player);
 
                 // Add the marker to the array
@@ -262,7 +269,9 @@ class MapLeaflet extends Component {
         }
 
         // At the end we want to remove the players that have been disconnected thus we compare the array of online users and the array we have in local
-        Object.keys(playersMarkers).filter((p) => {return !playersOnline.includes(p)}).forEach((p) => {
+        Object.keys(playersMarkers).filter((p) => {
+            return !playersOnline.includes(p)
+        }).forEach((p) => {
             // Remove the marker and the entry
             map.removeLayer(playersMarkers[p])
             delete playersMarkers[p]
