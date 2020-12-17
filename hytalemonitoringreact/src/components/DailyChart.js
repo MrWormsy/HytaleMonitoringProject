@@ -130,8 +130,6 @@ class DailyChart extends Component {
         return (
             <ResponsiveContainer width={700} aspect={16 / 9}>
                 <LineChart
-                    width={500}
-                    height={300}
                     data={this.state.data}
                     margin={chartMargin}
                 >

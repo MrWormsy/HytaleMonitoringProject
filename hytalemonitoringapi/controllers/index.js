@@ -102,6 +102,40 @@ const getDailyDensity = async (serverId) => {
     return response;
 }
 
+// Get the 10 top players in term of time spent on the server
+const getPlayerLeaderboard = async (serverId) => {
+
+    // The limit (10 players)
+    let limit = 10;
+
+    // The response
+    let response = [];
+
+    await Models.DailyPlayersDensity.find({server: serverId}).sort({$natural:-1}).limit(limit).then((result) => {
+
+        // We first want to loop through the response and only keep the number of players and the timestamp
+        result.reduce((acc, data) => {
+
+            // Give the data needed
+            let currentData = {};
+            currentData["timestamp"] = data.timestamp;
+            currentData["players"] = data.players;
+
+            // Push the data to the acc
+            acc.push(currentData);
+
+            return acc;
+        }, response);
+    }).catch(error => {
+
+        // If we get an error the response will be null
+        response = null;
+    })
+
+    // Return the response
+    return response;
+};
+
 const saveBulkData = async (server, data) => {
 
     // Create a model with all the data

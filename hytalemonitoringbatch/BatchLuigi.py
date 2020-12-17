@@ -207,11 +207,13 @@ class StepUpdatePlayerTimeSpentOnServer(luigi.Task):
             for player in playerTimeSpentDict:
                 playerstatsCollection.update_one(
                     {"player": player, "server": ObjectId(self.serverId)},
-                    {"$push": {"activity": {"d": playerTimeSpentDict[player],
-                                            "t": self.stepGetLastHourDataForServer.minTimestamp}}},
+                    {"$inc": {"activity": playerTimeSpentDict[player]}},
                     True
                 )
 
+            # This is too much data... we need to remove it
+            # "$push": {"activity": {"d": playerTimeSpentDict[player],
+            #  "t": self.stepGetLastHourDataForServer.minTimestamp}},
 
 # This is the batch called every hour, which requires a lot of
 # steps and then remove the data from the bulkData collection

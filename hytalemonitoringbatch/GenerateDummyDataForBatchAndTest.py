@@ -51,7 +51,7 @@ def runDailyBatch():
 def runOneWeekBatchWithDummyData():
 
     # The idea here is to run generateDummyBulkData and then run the batch 24 * 7 * 25 = 168 * 25 times
-    for i in range(168 * 25):
+    for i in range(24 * 25):
         generateDummyBulkData(server)
 
         # Every hour we want to run a hourly batch
@@ -64,4 +64,5 @@ def runOneWeekBatchWithDummyData():
 
 if __name__ == '__main__':
     # generateDummyBulkData(server)
+
     runOneWeekBatchWithDummyData()

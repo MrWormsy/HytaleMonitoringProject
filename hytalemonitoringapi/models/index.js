@@ -66,10 +66,10 @@ const PlayerStatsSchema =
         },
         player: String,
 
-        // The activity corresponds to the time spent on the server each hour
+        // The activity corresponds to the time spent on the server
         activity: {
-            type: [Object],
-            default: []
+            type: Number,
+            default: 0
         }
     }, {collection: 'playerstats'});
 

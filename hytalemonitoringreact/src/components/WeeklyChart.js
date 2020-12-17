@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 
-import {Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis,} from 'recharts';
+import {ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis,} from 'recharts';
 import axios from "axios";
 import moment from "moment";
 
@@ -10,8 +10,6 @@ const qs = require('qs');
 
 const range = [0, 256];
 
-// const chartWidth = window.width;
-// const chartHeight = 60;
 const chartMargin = {top: 10, right: 0, bottom: 0, left: 0};
 
 class WeeklyChart extends Component {
@@ -22,11 +20,8 @@ class WeeklyChart extends Component {
         let width = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).width;
         let height = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).height;
 
-        width = width ? +width : 800;
-        height = width ? ((+width) / 13.3333333333) : 60;
-
-
-        // height = height ? +height : 60;
+        width = width ? +width : 700;
+        height = width ? (width / (16/9)) : 60;
 
         this.state = {
             serverid: props.serverid,
@@ -170,11 +165,13 @@ class WeeklyChart extends Component {
         const domain = this.parseDomain();
 
         const chartWidth = this.state.windowWidth;
-        const chartHeight = this.state.windowHeigh;
+        const chartHeight = this.state.windowHeigh / 7;
 
         const xAxisInterval = 1;
 
         return (
+            <ResponsiveContainer width={700} aspect={16 / 9}>
+
             <div>
                 <ScatterChart
                     width={chartWidth}
@@ -287,7 +284,8 @@ class WeeklyChart extends Component {
                              content={this.renderTooltip}/>
                     <Scatter data={this.state.data[moment().subtract(0, 'day').format("ddd")]} fill="#8884d8"/>
                 </ScatterChart>
-            </div>
+                </div>
+            </ResponsiveContainer>
         );
     }
 }
