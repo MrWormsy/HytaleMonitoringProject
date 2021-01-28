@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" style="overflow: hidden">
+<html class="has-navbar-fixed-top" lang="en">
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1" name="viewport">
@@ -9,19 +9,97 @@
     />
     <title>Hytale Monitoring</title>
     <link href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css" rel="stylesheet">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+
     <link href="/stylesheets/style.css" rel="stylesheet">
 
     <link crossorigin="" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
           integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
           rel="stylesheet"/>
-
 </head>
 
-<body id="page-container">
+<body class="hero-image" id="page-container">
 <noscript>You need to enable JavaScript to run this app.</noscript>
-<div id="root">
-
-</div>
+<div id="root"></div>
 </body>
 
+<footer id="footer">
+    <div class="has-text-centered hero-image" style="color: #fff">
+        © 2020 Hytale Monitoring, all rights reserved.<br><br>
+        <span>Made with <span style="color: red">❤</span> by MrWormsy</span>
+        <br>
+        <br>
+    </div>
+</footer>
+
 </html>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.0/jquery.min.js"></script>
+
+<script>
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // Get all "navbar-burger" elements
+        const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+
+        // Check if there are any navbar burgers
+        if ($navbarBurgers.length > 0) {
+
+            // Add a click event on each of them
+            $navbarBurgers.forEach(el => {
+                el.addEventListener('click', () => {
+
+                    // Get the target from the "data-target" attribute
+                    const target = el.dataset.target;
+                    const $target = document.getElementById(target);
+
+                    // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+                    el.classList.toggle('is-active');
+                    $target.classList.toggle('is-active');
+
+                });
+            });
+
+            // Set the background to the navbar color not to be white
+            const mobileNavBar = document.getElementById("navbarExampleTransparentExample");
+            mobileNavBar.classList.toggle('navbar-buger-mode');
+
+            // Simulate a click on the burger to close the mobile navbar
+            const $navbarBurgerModes = Array.prototype.slice.call(document.querySelectorAll('.navbar-buger-mode'), 0);
+
+            $navbarBurgerModes.forEach(el => {
+                el.addEventListener('click', () => {
+                    document.getElementById("navbarBurger").click();
+                });
+            });
+        }
+    });
+</script>
+
+
+<script>
+
+    // When the user scrolls the page, execute myFunction
+    window.onscroll = function () {
+        onScroll()
+    };
+
+    // Get the header
+    var header = document.getElementById("header");
+
+    // Get the offset position of the navbar
+    var sticky = header.offsetTop;
+
+    // Add the sticky class to the header when you reach its scroll position. Remove "sticky" when you leave the scroll position
+    function onScroll() {
+        if (window.pageYOffset > sticky) {
+            header.classList.add("stickyBegin");
+            header.classList.remove("stickyEnd");
+        } else {
+            header.classList.remove("stickyBegin");
+            header.classList.add("stickyEnd");
+        }
+    }
+
+</script>

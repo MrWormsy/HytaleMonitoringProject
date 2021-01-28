@@ -102,24 +102,24 @@ const getDailyDensity = async (serverId) => {
     return response;
 }
 
-// Get the 10 top players in term of time spent on the server
+// Get the 5 top players in term of time spent on the server
 const getPlayerLeaderboard = async (serverId) => {
 
-    // The limit (10 players)
-    let limit = 10;
+    // The limit (5 players)
+    let limit = 5;
 
     // The response
     let response = [];
 
-    await Models.DailyPlayersDensity.find({server: serverId}).sort({$natural:-1}).limit(limit).then((result) => {
+    await Models.PlayerStats.find({server: serverId}).sort({activity:-1}).limit(limit).then((result) => {
 
-        // We first want to loop through the response and only keep the number of players and the timestamp
+        // We first want to loop through the response and only keep the players and the activity
         result.reduce((acc, data) => {
 
             // Give the data needed
             let currentData = {};
-            currentData["timestamp"] = data.timestamp;
-            currentData["players"] = data.players;
+            currentData["activity"] = data.activity;
+            currentData["player"] = data.player;
 
             // Push the data to the acc
             acc.push(currentData);
@@ -188,4 +188,4 @@ const addServer = async (serverData) => {
 }
 
 // Exports all the functions
-module.exports = {getServerData, addServer, getServerByToken, saveBulkData, getHourlyPlayerDensity, getDailyDensity};
+module.exports = {getServerData, addServer, getServerByToken, saveBulkData, getHourlyPlayerDensity, getDailyDensity, getPlayerLeaderboard};

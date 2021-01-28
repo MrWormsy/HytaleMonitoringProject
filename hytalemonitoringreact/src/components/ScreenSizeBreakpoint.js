@@ -8,6 +8,16 @@ class ScreenSizeBreakpoint extends Component {
     };
 
     render() {
+
+        // If the widescreen is forced we need to return without section
+        if (this.props.forceWidescreen === true) {
+            return <div>
+                <section style={{padding: "3rem 0.5rem"}} className="section">
+                    {this.props.children}
+                </section>
+            </div>
+        }
+
         return (
             <div>
                 {/* Mobile */}

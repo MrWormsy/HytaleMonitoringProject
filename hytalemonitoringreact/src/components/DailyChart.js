@@ -11,18 +11,19 @@ const qs = require('qs');
 
 const range = [0, 256];
 
-const chartMargin = {top: 5, right: 30, left: 20, bottom: 5};
+// const chartMargin = {top: 5, right: 30, left: 20, bottom: 5};
+const chartMargin = {top: 0, right: 0, left: 0, bottom: 0};
 
 class DailyChart extends Component {
 
     constructor(props) {
         super(props);
 
-        let width = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).width;
-        let height = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).height;
+        let width = props.width; // = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).width;
+        let height // = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).height;
 
-        width = width ? +width : 800;
-        height = width ? ((+width) / 13.3333333333) : 60;
+        width = width ? +width : undefined;
+        height = width ? (width / (16/9)) : undefined;
 
 
         // height = height ? +height : 60;
@@ -128,7 +129,7 @@ class DailyChart extends Component {
         }
 
         return (
-            <ResponsiveContainer width={700} aspect={16 / 9}>
+            <ResponsiveContainer width={this.state.windowWidth} aspect={16 / 9}>
                 <LineChart
                     data={this.state.data}
                     margin={chartMargin}

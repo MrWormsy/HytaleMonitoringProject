@@ -7,6 +7,9 @@ import ServerMap from "../pages/ServerMap";
 import ServerPage from "../pages/ServerPage";
 import WeeklyChart from "../WeeklyChart";
 import DailyChart from "../DailyChart";
+import PlayersChart from "../PlayersChart";
+import Navbar from "../Navbar";
+import MyRadarChart from "../RadarChart";
 
 let socket;
 
@@ -27,16 +30,18 @@ class Routes extends Component {
 
     render() {
         return (
-
-            <Switch>
+        <div>
+            <Navbar/><Switch>
                 <Route exact path="/" component={HomePage}/>
                 <Route path="/home" component={HomePage}/>
                 <Route path="/viewserver/map/:serverid" component={ServerMap}/>
                 <Route path="/viewserver/weeklychart/:serverid" component={WeeklyChart}/>
                 <Route path="/viewserver/dailychart/:serverid" component={DailyChart}/>
+                <Route path="/viewserver/playerchart/:serverid" component={PlayersChart}/>
+                <Route path="/viewserver/radarchart/:serverid" component={MyRadarChart}/>
                 <Route path="/server/:serverid" component={ServerPage}/>
             </Switch>
-
+        </div>
         )
     }
 }

@@ -50,6 +50,19 @@ router.get('/api/server/dailydensity/:serverid', ((req, res) => {
 
 }));
 
+// Get the top 5 players in term of time spent
+// TODO CHANGE THE ID !!
+router.get('/api/server/topplayer/:serverid', ((req, res) => {
+
+    // Search a server by its ID req.params.serverid
+    controller.getPlayerLeaderboard("5fbacfa1b9445012ab8b7271").then((result) => {
+        res.json(result);
+    }).catch((error) => {
+        res.json(error);
+    })
+
+}));
+
 router.post('/api/sendData', ((req, res) => {
 
     // We first need to get the secret Token of the server to be sure this server is real

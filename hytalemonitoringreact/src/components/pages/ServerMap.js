@@ -33,7 +33,7 @@ class ServerMap extends Component {
 
             this.state.server ?
 
-                <MapLeaflet/>
+                <MapLeaflet width={this.props.width}/>
 
                 :
 

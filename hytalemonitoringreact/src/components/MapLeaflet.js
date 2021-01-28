@@ -4,6 +4,7 @@ import * as L from 'leaflet';
 import '../css/map.css';
 
 import {socket} from "./routing/Routes";
+import {ResponsiveContainer} from "recharts";
 
 let map;
 
@@ -36,7 +37,13 @@ class MapLeaflet extends Component {
     constructor(props) {
         super(props);
 
-        this.state = {map: undefined};
+        let width = props.width; // = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).width;
+        let height // = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).height;
+
+        width = width ? +width : undefined;
+        height = width ? (width / (16/9)) : undefined;
+
+        this.state = {map: undefined, windowWidth: width, windowHeigh: height};
 
         // We have to gather the data of the map like the zones, the markers, the texts
     }
@@ -189,7 +196,7 @@ class MapLeaflet extends Component {
     }
 
     changeCoordinates = (x, z) => {
-        document.getElementById("coordinates-span").innerHTML = `Coordinates: (<strong>X</strong>:${x}, <strong>Z</strong>:${z}`
+        document.getElementById("coordinates-span").innerHTML = `Coordinates: (<strong>X</strong>:${x}, <strong>Z</strong>:${z})`
     }
 
     // Highlight a given chunk
@@ -226,6 +233,13 @@ class MapLeaflet extends Component {
         this.initMap();
 
         this.highlightChunkWorldPosition(0, 0, 31, 31, "white")
+
+        // We can change the height of the map
+        let mapWidth = document.getElementById("mapid").getBoundingClientRect().width;
+
+        document.getElementById("mapid").style.height = mapWidth / (16/9) + 'px';
+
+        console.log(mapWidth)
     }
 
     /* Removing the listener before unmounting the component in order to avoid addition of multiple listener at the time revisit*/
@@ -285,9 +299,9 @@ class MapLeaflet extends Component {
     render() {
 
         return (
-            <div style={{height: '100%'}} id="mapid">
+                <div style={{height: this.state.windowHeigh, width: this.state.windowWidth}} id="mapid">
 
-            </div>
+                </div>
         );
     }
 }

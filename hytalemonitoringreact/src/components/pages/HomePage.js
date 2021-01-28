@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import MapLeaflet from "../MapLeaflet";
+import ScreenSizeBreakpoint from "../ScreenSizeBreakpoint";
 
 class HomePage extends Component {
 
@@ -9,9 +9,11 @@ class HomePage extends Component {
 
     render() {
         return (
-            <>
-                <MapLeaflet/>
-            </>
+            <ScreenSizeBreakpoint>
+                <div className="notification">
+                    Hello
+                </div>
+            </ScreenSizeBreakpoint>
         );
     }
 }

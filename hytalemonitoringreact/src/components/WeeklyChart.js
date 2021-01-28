@@ -1,14 +1,12 @@
 import React, {Component} from 'react';
 
-import {ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis,} from 'recharts';
+import {Legend, ResponsiveContainer, Scatter, ScatterChart, Text, Tooltip, XAxis, YAxis, ZAxis,} from 'recharts';
 import axios from "axios";
 import moment from "moment";
 
 import * as d3 from 'd3';
 
 const qs = require('qs');
-
-const range = [0, 256];
 
 const chartMargin = {top: 10, right: 0, bottom: 0, left: 0};
 
@@ -17,8 +15,8 @@ class WeeklyChart extends Component {
     constructor(props) {
         super(props);
 
-        let width = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).width;
-        let height = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).height;
+        let width = props.width; // = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).width;
+        let height // = qs.parse(this.props.location.search, {ignoreQueryPrefix: true}).height;
 
         width = width ? +width : 700;
         height = width ? (width / (16/9)) : 60;
@@ -29,7 +27,8 @@ class WeeklyChart extends Component {
             minValue: 0,
             maxValue: 0,
             windowWidth: width,
-            windowHeigh: height
+            windowHeigh: height,
+            rangeCircles: [0, 256]
         };
 
         // We get the server by its id
@@ -155,6 +154,23 @@ class WeeklyChart extends Component {
         return null;
     }
 
+    componentDidMount() {
+        let theWidth = document.getElementById("weeklyChart").getBoundingClientRect().width;
+
+        // let theRatio = 57.5555555556;
+        let theRatio = 60;
+
+        // let theSecondRatio = 13.69351507642528;
+        let theSecondRatio = 18;
+
+        console.log();
+
+        this.setState({rangeCircles :[0, theSecondRatio * (theWidth / theRatio)]})
+
+        console.log()
+
+    }
+
     render() {
 
         // If data is null we return null
@@ -169,121 +185,147 @@ class WeeklyChart extends Component {
 
         const xAxisInterval = 1;
 
+        const widthHeightRatio = 12.4444444444;
+
+        const tempRatio = 14.2222222222;
+
+        const range = [0, 256];
+
         return (
-            <ResponsiveContainer width={700} aspect={16 / 9}>
+            <ResponsiveContainer width={undefined} aspect={16 / 9}>
+
 
             <div>
+                <div style={{textAlign: "center", margin: "0 0 10px"}} aspect={widthHeightRatio}>
+                <Text verticalAnchor="middle" textAnchor="middle">Weekly player's density</Text>
+                </div>
+
+                <ResponsiveContainer style={{marginTop: "10px"}} width={undefined} aspect={widthHeightRatio}>
+
                 <ScatterChart
-                    width={chartWidth}
-                    height={chartHeight}
                     margin={chartMargin}
                 >
                     <XAxis type="category" dataKey="hour" interval={xAxisInterval} tick={{fontSize: 0}}
                            tickLine={{transform: 'translate(0, -6)'}}/>
-                    <YAxis type="number" dataKey="index" name="sunday" height={10} width={80} tick={false}
+                    <YAxis type="number" dataKey="index" name="sunday" tick={false}
                            tickLine={false} axisLine={false}
                            label={{value: moment().subtract(6, 'day').format("ddd"), position: 'insideRight'}}/>
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range}/>
+                    <ZAxis type="number" dataKey="value" domain={domain} range={this.state.rangeCircles}/>
                     <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{zIndex: 100}}
                              content={this.renderTooltip}/>
                     <Scatter data={this.state.data[moment().subtract(6, 'day').format("ddd")]} fill="#8884d8"/>
                 </ScatterChart>
 
+                </ResponsiveContainer>
+                <ResponsiveContainer width={undefined} aspect={widthHeightRatio}>
+
                 <ScatterChart
-                    width={chartWidth}
-                    height={chartHeight}
+
                     margin={chartMargin}
                 >
                     <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{fontSize: 0}}
                            tickLine={{transform: 'translate(0, -6)'}}/>
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false}
+                    <YAxis type="number" dataKey="index"  tick={false} tickLine={false}
                            axisLine={false}
                            label={{value: moment().subtract(5, 'day').format("ddd"), position: 'insideRight'}}/>
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range}/>
+                    <ZAxis type="number" dataKey="value" domain={domain} range={this.state.rangeCircles}/>
                     <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{zIndex: 100}}
                              content={this.renderTooltip}/>
                     <Scatter data={this.state.data[moment().subtract(5, 'day').format("ddd")]} fill="#8884d8"/>
                 </ScatterChart>
 
+                </ResponsiveContainer>
+                <ResponsiveContainer width={undefined} aspect={widthHeightRatio}>
+
                 <ScatterChart
-                    width={chartWidth}
-                    height={chartHeight}
+
                     margin={chartMargin}
                 >
                     <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{fontSize: 0}}
                            tickLine={{transform: 'translate(0, -6)'}}/>
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false}
+                    <YAxis type="number" dataKey="index"  tick={false} tickLine={false}
                            axisLine={false}
                            label={{value: moment().subtract(4, 'day').format("ddd"), position: 'insideRight'}}/>
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range}/>
+                    <ZAxis type="number" dataKey="value" domain={domain} range={this.state.rangeCircles}/>
                     <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{zIndex: 100}}
                              content={this.renderTooltip}/>
                     <Scatter data={this.state.data[moment().subtract(4, 'day').format("ddd")]} fill="#8884d8"/>
                 </ScatterChart>
 
+                </ResponsiveContainer>
+                <ResponsiveContainer width={undefined} aspect={widthHeightRatio}>
+
                 <ScatterChart
-                    width={chartWidth}
-                    height={chartHeight}
+
                     margin={chartMargin}
                 >
                     <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{fontSize: 0}}
                            tickLine={{transform: 'translate(0, -6)'}}/>
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false}
+                    <YAxis type="number" dataKey="index"  tick={false} tickLine={false}
                            axisLine={false}
                            label={{value: moment().subtract(3, 'day').format("ddd"), position: 'insideRight'}}/>
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range}/>
+                    <ZAxis type="number" dataKey="value" domain={domain} range={this.state.rangeCircles}/>
                     <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{zIndex: 100}}
                              content={this.renderTooltip}/>
                     <Scatter data={this.state.data[moment().subtract(3, 'day').format("ddd")]} fill="#8884d8"/>
                 </ScatterChart>
 
+                </ResponsiveContainer>
+                <ResponsiveContainer width={undefined} aspect={widthHeightRatio}>
+
                 <ScatterChart
-                    width={chartWidth}
-                    height={chartHeight}
+
                     margin={chartMargin}
                 >
                     <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{fontSize: 0}}
                            tickLine={{transform: 'translate(0, -6)'}}/>
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false}
+                    <YAxis type="number" dataKey="index"  tick={false} tickLine={false}
                            axisLine={false}
                            label={{value: moment().subtract(2, 'day').format("ddd"), position: 'insideRight'}}/>
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range}/>
+                    <ZAxis type="number" dataKey="value" domain={domain} range={this.state.rangeCircles}/>
                     <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{zIndex: 100}}
                              content={this.renderTooltip}/>
                     <Scatter data={this.state.data[moment().subtract(2, 'day').format("ddd")]} fill="#8884d8"/>
                 </ScatterChart>
 
+                </ResponsiveContainer>
+                <ResponsiveContainer width={undefined} aspect={widthHeightRatio}>
+
                 <ScatterChart
-                    width={chartWidth}
-                    height={chartHeight}
+
                     margin={chartMargin}
                 >
                     <XAxis type="category" dataKey="hour" name="hour" interval={xAxisInterval} tick={{fontSize: 0}}
                            tickLine={{transform: 'translate(0, -6)'}}/>
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false}
+                    <YAxis type="number" dataKey="index"  tick={false} tickLine={false}
                            axisLine={false}
                            label={{value: moment().subtract(1, 'day').format("ddd"), position: 'insideRight'}}/>
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range}/>
+                    <ZAxis type="number" dataKey="value" domain={domain} range={this.state.rangeCircles}/>
                     <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{zIndex: 100}}
                              content={this.renderTooltip}/>
                     <Scatter data={this.state.data[moment().subtract(1, 'day').format("ddd")]} fill="#8884d8"/>
                 </ScatterChart>
 
+                </ResponsiveContainer>
+                <ResponsiveContainer width={undefined} aspect={widthHeightRatio}>
+
                 <ScatterChart
-                    width={chartWidth}
-                    height={chartHeight}
+
                     margin={chartMargin}
                 >
                     <XAxis type="category" dataKey="hour" name="hour" interval={1}
                            tickLine={{transform: 'translate(0, -6)'}}/>
-                    <YAxis type="number" dataKey="index" height={10} width={80} tick={false} tickLine={false}
+                    <YAxis type="number" dataKey="index"  tick={false} tickLine={false}
                            axisLine={false}
                            label={{value: moment().subtract(0, 'day').format("ddd"), position: 'insideRight'}}/>
-                    <ZAxis type="number" dataKey="value" domain={domain} range={range}/>
+                    <ZAxis type="number" dataKey="value" domain={domain} range={this.state.rangeCircles}/>
                     <Tooltip cursor={{strokeDasharray: '3 3'}} wrapperStyle={{zIndex: 100}}
                              content={this.renderTooltip}/>
                     <Scatter data={this.state.data[moment().subtract(0, 'day').format("ddd")]} fill="#8884d8"/>
                 </ScatterChart>
+
+                </ResponsiveContainer>
+
                 </div>
             </ResponsiveContainer>
         );

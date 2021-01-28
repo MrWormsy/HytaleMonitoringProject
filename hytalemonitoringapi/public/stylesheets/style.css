@@ -1,6 +1,7 @@
 /* Style the header */
 .header {
-    background-color: rgba(100, 78, 91, 1);
+    /* background-color: rgba(100, 78, 91, 1); */
+    background-color: #2a3b55;
     color: #f1f1f1;
 }
 
@@ -10,6 +11,10 @@
 
 .navbar-burger {
     color: #ffffff;
+}
+
+.is-fixed-top {
+    z-index: 3000!important;
 }
 
 .tooltipProgressBar {
@@ -28,7 +33,7 @@
 }
 
 .navbar-menu.navbar-buger-mode {
-    background-color: rgba(100, 78, 91, 0.6);
+    background-color: rgba(42, 59, 85, 0.6);
 }
 
 .notification {
@@ -36,7 +41,7 @@
 }
 
 .hero-image {
-    background-image: url("../images/bg.png"); /* The image used */
+    background-image: url("../images/bg.jpeg"); /* The image used */
     background-color: rgba(100, 78, 91, 0.95); /* Used if the image is unavailable */
     background-position: center; /* Center the image */
     background-repeat: no-repeat; /* Do not repeat the image */
@@ -91,4 +96,8 @@
     width:0;
     height:0;
     transition: width 0.5s 0.5s, height 0.5s 0.5s, opacity 0.5s;
+}
+
+.notification a:not(.button):not(.dropdown-item) {
+    text-decoration: none !important;
 }
